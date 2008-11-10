@@ -1,0 +1,1 @@
+map -- :e <cWORD><cr>
