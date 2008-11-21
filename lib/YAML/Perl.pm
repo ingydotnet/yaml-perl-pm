@@ -5,27 +5,34 @@
 package YAML::Perl;
 use 5.005003;
 use strict;
-use warnings;
+use warnings; # XXX requires 5.6+
 use Carp;
 use YAML::Perl::Base -base;
 
 $YAML::Perl::VERSION = '0.01';
+
 @YAML::Perl::EXPORT = qw'Dump Load';
 @YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw';
 
-field dumper_class =>
-    -init => '$YAML::Perl::DumperClass || "YAML::Perl::Dumper"';
+field dumper_class => -chain,
+    -class => '-init',
+    -init => '$YAML::Perl::DumperClass || $YAML::DumperClass || "YAML::Perl::Dumper"';
 field dumper =>
+    -class => '-init',
     -init => '$self->create("dumper")';
 
-field loader_class =>
-    -init => '$YAML::Perl::LoaderClass || "YAML::Perl::Loader"';
+field loader_class => -chain,
+    -class => '-init',
+    -init => '$YAML::Perl::LoaderClass || $YAML::LoaderClass || "YAML::Perl::Loader"';
 field loader =>
+    -class => '-init',
     -init => '$self->create("loader")';
 
-field resolver_class =>
-    -init => '$YAML::Perl::ResolverClass || "YAML::Perl::Resolver"';
+field resolver_class => -chain,
+    -class => '-init',
+    -init => '$YAML::Perl::ResolverClass || $YAML::ResolverClass || "YAML::Perl::Resolver"';
 field resolver =>
+    -class => '-init',
     -init => '$self->create("resolver")';
 
 sub Dump {

@@ -1,7 +1,9 @@
-use t::TestYAMLPerl tests => 3 * 2;
+use t::TestYAMLPerl tests => 3 * 4;
 
 test('YAML::Perl');
 test('YAML::Perl::Dumper');
+test('YAML::Perl::Loader');
+test('YAML::Perl::Resolver');
 
 sub test {
     my $class = shift;

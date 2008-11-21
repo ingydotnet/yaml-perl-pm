@@ -1,0 +1,29 @@
+== Usage
+
+    use YAML; # Picks the best implementation
+
+    use YAML-Best;
+    use YAML-Old;
+    use YAML-Syck;
+    use YAML-Tiny;
+
+    use YAML();
+
+    my $object = {foo => [ 5..10 ]};
+
+    $yaml = YAML->dump($object);
+    $yaml = YAML->dumper->dump($object);
+    $yaml = YAML->dumper_class('Foo::Dumper')->dumper->dump($object);
+
+    $yaml = YAML->dumper
+        ->indent(4)
+        ->dump($object);
+
+== Tests
+
+- YAML::Dump()
+- YAML->dump()
+- YAML->new->dumper->dump();
+- YAML->new->dumper_class(...)->dumper->dump();
+- YAML->dumper->dump();
+- YAML->dumper->option1()->option2()->dump();

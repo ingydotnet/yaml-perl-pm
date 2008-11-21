@@ -1,1 +1,1 @@
-map -- :e <cWORD><cr>
+map - :vsplit <cWORD><cr>

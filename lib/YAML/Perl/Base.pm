@@ -48,7 +48,6 @@ sub export_base {
 
 sub new {
     my $class = shift;
-#     $class->dump_object(@_);
     my $self = bless {}, $class;
     $self->init(@_);
     return $self;
@@ -107,6 +106,8 @@ my %code = (
       "sub {\n",
     set_default =>
       "  \$_[0]->{%s} = %s\n    unless exists \$_[0]->{%s};\n",
+    class =>
+      "  return do { my \$class = \$_[0]; %s } unless ref \$_[0];\n",
     init =>
       "  return \$_[0]->{%s} = do { my \$self = \$_[0]; %s }\n" .
       "    unless \$#_ > 0 or defined \$_[0]->{%s};\n",
@@ -116,6 +117,8 @@ my %code = (
       "  \$_[0]->{%s} = \$_[1];\n",
     onset =>
       "  do { local \$_ = \$_[1]; my \$self = \$_[0]; %s };\n",
+    chain =>
+      "  return \$_[0];\n}\n",
     sub_end => 
       "  return \$_[0]->{%s};\n}\n",
 );
@@ -128,6 +131,9 @@ my $parse_arguments = sub {
         my $elem = shift;
         if (defined $elem and defined $pairs{$elem} and @_) {
             $args->{$elem} = shift;
+        }
+        elsif ($elem eq '-chain') {
+            $args->{-chain} = 1;
         }
         else {
             push @values, $elem;
@@ -149,7 +155,7 @@ my $default_as_code = sub {
 sub field {
     my $package = caller;
     my ($args, @values) = &$parse_arguments(
-        [ qw(-package -init -onset) ],
+        [ qw(-package -class -init -onset) ],
         @_,
     );
     my ($field, $default) = @values;
@@ -163,9 +169,25 @@ sub field {
           : &$default_as_code($default);
 
     my $code = $code{sub_start};
+
+    if ($args->{-class}) {
+        if ($args->{-class} eq '-init') {
+            $args->{-class} = $args->{-init};
+            $args->{-class} =~ s/\$self/\$class/g;
+        }
+        my $fragment = $code{class};
+        $code .= sprintf
+            $fragment,
+            $args->{-class};
+    }
+
     if ($args->{-init}) {
         my $fragment = $code{init};
-        $code .= sprintf $fragment, $field, $args->{-init}, ($field) x 4;
+        $code .= sprintf
+            $fragment,
+            $field,
+            $args->{-init},
+            ($field) x 4;
     }
     $code .= sprintf $code{set_default}, $field, $default_string, $field
       if defined $default;
@@ -173,7 +195,12 @@ sub field {
     $code .= sprintf $code{set}, $field;
     $code .= sprintf $code{onset}, $args->{-onset}
       if defined $args->{-onset};
-    $code .= sprintf $code{sub_end}, $field;
+    if (defined $args->{-chain}) {
+        $code .= $code{chain};
+    }
+    else {
+        $code .= sprintf $code{sub_end}, $field;
+    }
 
     my $sub = eval $code;
     CORE::die $@ if $@;
