@@ -27,3 +27,21 @@
 - YAML->new->dumper_class(...)->dumper->dump();
 - YAML->dumper->dump();
 - YAML->dumper->option1()->option2()->dump();
+
+== API
+
+use YAML-XS;
+
+print yaml->option1()->option2(...)->dump(\%INC);
+$inc = yaml->load(yaml->dump(\%INC));
+
+use YAML-Syck 'yaml=yaml_syck';
+
+yaml_syck->load_file('foo.yaml');
+
+== RoadMap
+
+- Release YAML as YAML::Old
+- Change YAML to an API module.
+
+
