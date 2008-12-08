@@ -153,7 +153,7 @@ sub increase_indent {
         }
     }
     elsif (not $indentless) {
-        $self->indent($self->indent + 1);
+        $self->indent($self->indent + $self->best_indent);
     }
 }
 
@@ -216,7 +216,7 @@ sub expect_document_start {
             $self->write_indent();
             $self->write_indicator('---', True);
             if ($self->canonical) {
-                $self->write_indent;
+                $self->write_indent();
             }
         }
         $self->state('expect_document_root');
