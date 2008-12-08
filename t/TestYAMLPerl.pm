@@ -9,6 +9,7 @@ BEGIN {
     use YAML();
     use YAML::Dumper();
     use YAML::XS();
+    use Test::Base::Filter;
     use Error;
     use utf8;
     require "utf8_heavy.pl";
@@ -17,8 +18,7 @@ BEGIN {
     @INC = qw(lib);
 }
 
-# use Test::YAML 0.51 -Base;
-# 
-# $Test::YAML::YAML = 'YAML';
-# 
-# $^W = 1;
+package t::TestYAMLPerl::Filter;
+use Test::Base::Filter -base;
+
+

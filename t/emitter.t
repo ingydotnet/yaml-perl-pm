@@ -1,26 +1,41 @@
 use t::TestYAMLPerl tests => 1;
 
 use YAML::Perl::Emitter;
+use YAML::Perl::Events;
 
-my @events = (
-    YAML::Perl::Event::StreamStart->new(),
-    YAML::Perl::Event::DocumentStart->new(),
-    YAML::Perl::Event::MappingStart->new(),
-    YAML::Perl::Event::Scalar->new(value => 42),
-    YAML::Perl::Event::MappingStart->new(),
-    YAML::Perl::Event::Scalar->new(value => 43),
-    YAML::Perl::Event::Scalar->new(value => 44),
-    YAML::Perl::Event::MappingEnd->new(),
-    YAML::Perl::Event::MappingEnd->new(),
-    YAML::Perl::Event::DocumentEnd->new(),
-    YAML::Perl::Event::StreamEnd->new(),
-);
+filters { events => [qw(lines chomp make_events emit_yaml)] };
 
-my $e = YAML::Perl::Emitter->new();
+run_is events => 'yaml';
 
-for (@events) {
-    $e->emit($_);
+sub make_events {
+    map {
+       my ($event, @args) = split;
+       "YAML::Perl::Event::$event"->new(@args);
+   } @_;
 }
 
-is ${$e->stream->buffer}, "42:\n  43: 44\n", 'Emit works';
-# is ${$e->stream->buffer}, "42: 43\n", 'Emit works';
+sub emit_yaml {
+    my $e = YAML::Perl::Emitter->new();
+    $e->emit($_) for @_;
+    ${$e->stream->buffer};
+}
+
+
+__END__
+=== Emit Works
+--- events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value 42
+MappingStart
+Scalar value 43
+Scalar value 44
+MappingEnd
+MappingEnd
+DocumentEnd
+StreamEnd
+--- yaml
+42:
+  43: 44
+

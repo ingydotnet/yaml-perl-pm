@@ -1,5 +1,12 @@
 # pyyaml/lib/yaml/emitter.py
 
+# Emitter expects events obeying the following grammar:
+# stream ::= STREAM-START document* STREAM-END
+# document ::= DOCUMENT-START node DOCUMENT-END
+# node ::= SCALAR | sequence | mapping
+# sequence ::= SEQUENCE-START node* SEQUENCE-END
+# mapping ::= MAPPING-START (node node)* MAPPING-END
+
 # To Do:
 # - Make encode stuff work
 
