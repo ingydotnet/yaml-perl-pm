@@ -9,6 +9,9 @@ BEGIN {
     use YAML();
     use YAML::Dumper();
     use YAML::XS();
+    use Error;
+    use utf8;
+    require "utf8_heavy.pl";
     use Carp::Heavy;
     delete $ENV{PERL5LIB};
     @INC = qw(lib);

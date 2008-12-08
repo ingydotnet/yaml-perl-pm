@@ -810,7 +810,7 @@ class Emitter(object):
         return ScalarAnalysis(scalar=scalar,
                 empty=False, multiline=line_breaks,
                 allow_flow_plain=allow_flow_plain,
-                allow_block_plain=allow_block_plain,
+        
                 allow_single_quoted=allow_single_quoted,
                 allow_double_quoted=allow_double_quoted,
                 allow_block=allow_block)

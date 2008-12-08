@@ -4,4 +4,6 @@ name 'YAML-Perl';
 
 all_from 'lib/YAML/Perl.pm';
 
+requires 'Error';
+
 WriteAll;

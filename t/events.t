@@ -9,6 +9,6 @@ my $event = YAML::Perl::Event::Scalar->new(
 
 is 
     "$event",
-    'YAML::Perl::Event::Scalar (anchor=bar, implicit=1)',
+    'YAML::Perl::Event::Scalar(anchor=bar, implicit=1)',
     'YAML::Perl::Event objects stringifies correctly'
 ;

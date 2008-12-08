@@ -1,6 +1,10 @@
 package YAML::Perl::Base;
 use strict;
 use warnings;
+use Error ':try';
+
+use constant True => 1;
+use constant False => 0;
 
 sub import {
     my ($class, $flag) = @_;
@@ -227,17 +231,15 @@ sub assert {
     Carp::confess("assert failed") unless $_[0];
 }
 
-sub throw {
-    CORE::die @_;
-}
-
 sub EXPORT_BASE {
     return qw(
+        YAML::Perl::Base::True
+        YAML::Perl::Base::False
         YAML::Perl::Base::field
         YAML::Perl::Base::XXX
         YAML::Perl::Base::WWW
         YAML::Perl::Base::assert
-        YAML::Perl::Base::throw
+        YAML::Perl::Base::try
     );
 }
 
