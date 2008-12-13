@@ -94,8 +94,8 @@ sub emit {
     push @{$self->events}, $event;
     while (not $self->need_more_events()) {
         $self->event(shift @{$self->events});
-        my $method = $self->state;
-        $self->$method();
+        my $state = $self->state;
+        $self->$state();
         $self->event(undef);
     }
     return ${$self->stream->buffer};

@@ -132,6 +132,7 @@ class Reader(object):
         return self.buffer[self.pointer:self.pointer+length]
 
     def forward(self, length=1):
+        # print '(' + str(length) + ')',
         if self.pointer+length+1 >= len(self.buffer):
             self.update(length+1)
         while length:

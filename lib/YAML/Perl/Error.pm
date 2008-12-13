@@ -4,6 +4,8 @@ package YAML::Perl::Error;
 use strict;
 use warnings;
 
+use Error();
+$Error::Debug = 1;
 
 package YAML::Perl::Mark;
 use YAML::Perl::Base -base;
@@ -73,6 +75,15 @@ use base 'Error::Simple';
 
 *new = \&Error::Simple::new;
 
+# sub throw {
+#     my $self = shift;
+#     local $Error::Depth = $Error::Depth + 1;
+# 
+#     # if we are not rethrow-ing then create the object to throw
+#     $self = $self->new(@_) unless ref($self);
+#     
+#     die $Error::THROWN = $self;
+# }
 
 package YAML::Perl::Error::Marked;
 use YAML::Perl::Error -base;

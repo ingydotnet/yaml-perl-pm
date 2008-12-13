@@ -17,7 +17,7 @@ use overload '""' => sub {
     my @attributes = grep exists($self->{$_}),
        qw(anchor tag implicit value);
     my $arguments = join ', ', map
-        sprintf("%s=%s", $_, $self->{$_}), @attributes;
+        sprintf("%s=%s", $_, ($self->{$_}||'')), @attributes;
     return "$class($arguments)";
 };
 

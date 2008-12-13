@@ -1,17 +1,84 @@
 # pyyaml/lib/yaml/parser.py
 
+# The following YAML grammar is LL(1) and is parsed by a recursive descent
+# parser.
+#
+# stream            ::= STREAM-START implicit_document? explicit_document* STREAM-END
+# implicit_document ::= block_node DOCUMENT-END*
+# explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
+# block_node_or_indentless_sequence ::=
+#                       ALIAS
+#                       | properties (block_content | indentless_block_sequence)?
+#                       | block_content
+#                       | indentless_block_sequence
+# block_node        ::= ALIAS
+#                       | properties block_content?
+#                       | block_content
+# flow_node         ::= ALIAS
+#                       | properties flow_content?
+#                       | flow_content
+# properties        ::= TAG ANCHOR? | ANCHOR TAG?
+# block_content     ::= block_collection | flow_collection | SCALAR
+# flow_content      ::= flow_collection | SCALAR
+# block_collection  ::= block_sequence | block_mapping
+# flow_collection   ::= flow_sequence | flow_mapping
+# block_sequence    ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
+# indentless_sequence   ::= (BLOCK-ENTRY block_node?)+
+# block_mapping     ::= BLOCK-MAPPING_START
+#                       ((KEY block_node_or_indentless_sequence?)?
+#                       (VALUE block_node_or_indentless_sequence?)?)*
+#                       BLOCK-END
+# flow_sequence     ::= FLOW-SEQUENCE-START
+#                       (flow_sequence_entry FLOW-ENTRY)*
+#                       flow_sequence_entry?
+#                       FLOW-SEQUENCE-END
+# flow_sequence_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+# flow_mapping      ::= FLOW-MAPPING-START
+#                       (flow_mapping_entry FLOW-ENTRY)*
+#                       flow_mapping_entry?
+#                       FLOW-MAPPING-END
+# flow_mapping_entry    ::= flow_node | KEY flow_node? (VALUE flow_node?)?
+#
+# FIRST sets:
+#
+# stream: { STREAM-START }
+# explicit_document: { DIRECTIVE DOCUMENT-START }
+# implicit_document: FIRST(block_node)
+# block_node: { ALIAS TAG ANCHOR SCALAR BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START }
+# flow_node: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START }
+# block_content: { BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START SCALAR }
+# flow_content: { FLOW-SEQUENCE-START FLOW-MAPPING-START SCALAR }
+# block_collection: { BLOCK-SEQUENCE-START BLOCK-MAPPING-START }
+# flow_collection: { FLOW-SEQUENCE-START FLOW-MAPPING-START }
+# block_sequence: { BLOCK-SEQUENCE-START }
+# block_mapping: { BLOCK-MAPPING-START }
+# block_node_or_indentless_sequence: { ALIAS ANCHOR TAG SCALAR BLOCK-SEQUENCE-START BLOCK-MAPPING-START FLOW-SEQUENCE-START FLOW-MAPPING-START BLOCK-ENTRY }
+# indentless_sequence: { ENTRY }
+# flow_collection: { FLOW-SEQUENCE-START FLOW-MAPPING-START }
+# flow_sequence: { FLOW-SEQUENCE-START }
+# flow_mapping: { FLOW-MAPPING-START }
+# flow_sequence_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
+# flow_mapping_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
+
 package YAML::Perl::Parser;
 use strict;
 use warnings;
 
 use YAML::Perl::Error;
+use YAML::Perl::Tokens;
 use YAML::Perl::Events;
+use YAML::Perl::Scanner;
 
-package YAML::Perl::Parser::Error;
+package YAML::Perl::Error::Parser;
 use YAML::Perl::Error::Marked -base;
 
 package YAML::Perl::Parser;
 use YAML::Perl::Processor -base;
+
+use constant DEFAULT_TAGS => {
+    '!' => '!',
+    '!!' => 'tag:yaml.org,2002:',
+};
 
 field 'next_layer' => 'scanner';
 
@@ -20,63 +87,90 @@ field 'scanner', -init => '$self->create("scanner")';
 
 field 'current_event';
 field 'yaml_version';
-field 'tag_handles';
+field 'tag_handles' => {};
 field 'states' => [];
 field 'marks' => [];
 field 'state' => 'parse_stream_start';
 
+sub parse {
+    my $self = shift;
+    my @events = ();
+    while ($self->check_event()) {
+        push @events, $self->get_event();
+    }
+    @events;
+}
+
+# sub next {
+#     my $self = shift;
+#     $self->get_event();
+# }
+
+
 sub check_event {
+    # print "+check_event\n";
     my $self = shift;
     my @choices = @_;
     if (not defined $self->current_event) {
         if ($self->state) {
             my $state = $self->state;
-            $self->{current_event} = $self->$state();
+            $self->current_event($self->$state());
         }
     }
     if (defined $self->current_event) {
-        return 1 unless @choices;
+        if (not @choices) {
+            return True;
+        }
         for my $choice (@choices) {
-            return 1
-                if $self->current_event->isa($choice);
+            if ($self->current_event->isa($choice)) {
+                return True;
+            }
         }
     }
-    return 0;
+    return False;
 }
 
 sub peek_event {
+    # print "+peek_event\n";
     my $self = shift;
     if (not defined $self->current_event) {
         if (my $state = $self->state) {
-            XXX $state;
-            $self->{current_event} = $self->$state;
+            $self->current_event($self->$state());
         }
     }
     return $self->current_event;
 }
 
 sub get_event {
+    # print "+get_event\n";
     my $self = shift;
+    # print $self->state . "\n";
+    # print "  " . $self->scanner->peek_token() . "\n";
+    # print "  [@{$self->scanner->tokens}]\n";
     if (not defined $self->current_event) {
         if (my $state = $self->state) {
-            $self->{current_event} = $self->$state;
+            $self->current_event($self->$state());
         }
     }
     my $value = $self->current_event;
-    $self->{current_event} = undef;
+    $self->current_event(undef);
+    # print "    $value\n";
     return $value;
 }
+
+# stream    ::= STREAM-START implicit_document? explicit_document* STREAM-END
+# implicit_document ::= block_node DOCUMENT-END*
+# explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
 
 sub parse_stream_start {
     my $self = shift;
     my $token = $self->scanner->get_token();
-    assert(ref($token) eq 'YAML::Perl::Token::StreamStart');
     my $event = YAML::Perl::Event::StreamStart->new(
         start_mark => $token->start_mark,
         end_mark => $token->end_mark,
         encoding => $token->encoding,
     );
-    $self->{state} = 'parse_implicit_document_start';
+    $self->state('parse_implicit_document_start');
     return $event;
 }
 
@@ -87,18 +181,18 @@ sub parse_implicit_document_start {
         YAML::Perl::Token::DocumentStart
         YAML::Perl::Token::StreamEnd
     ))) {
-        $self->{tag_handles} = $self->DEFAULT_TAGS;
+        $self->tag_handles(DEFAULT_TAGS);
         my $token = $self->scanner->peek_token();
         my $start_mark = $token->start_mark;
         my $end_mark = $start_mark;
         my $event = YAML::Perl::Event::DocumentStart->new(
             start_mark => $start_mark,
             end_mark => $end_mark,
-            explicit => 0,
+            explicit => False,
         );
 
         push @{$self->states}, 'parse_document_end';
-        $self->{state} = 'parse_block_node';
+        $self->state('parse_block_node');
         return $event;
     }
     return $self->parse_document_start();
@@ -107,16 +201,18 @@ sub parse_implicit_document_start {
 sub parse_document_start {
     my $self = shift;
     my $event;
+    while ($self->scanner->check_token('YAML::Perl::Token::DocumentEnd')) {
+        $self->scanner->get_token();
+    }
+
     if (not $self->scanner->check_token('YAML::Perl::Token::StreamEnd')) {
         my $token = $self->scanner->peek_token();
         my $start_mark = $token->start_mark;
         my ($version, $tags) = $self->process_directives();
         if (not $self->scanner->check_token('YAML::Perl::Token::DocumentStart')) {
-            throw YAML::Perl::Parser::Error->new(
-                undef, undef,
-                "expected '<document start', but found " .
+            throw YAML::Perl::Error::Parser(
+                "expected '<document start>', but found " .
                     $self->scanner->peek_token->id,
-                self->scanner->peek_token->start_mark
             );
         }
         $token = $self->scanner->get_token();
@@ -129,7 +225,7 @@ sub parse_document_start {
             tags => $tags,
         );
         push @{$self->states}, 'parse_document_end';
-        $self->{state} = 'parse_document_content';
+        $self->state('parse_document_content');
     }
     else {
         my $token = $self->scanner->get_token();
@@ -139,7 +235,7 @@ sub parse_document_start {
         );
         assert not scalar @{$self->states};
         assert not scalar @{$self->marks};
-        $self->{state} = undef;
+        $self->state(undef);
     }
     return $event;
 }
@@ -160,7 +256,7 @@ sub parse_document_end {
         end_mark => $end_mark,
         explicit => $explicit,
     );
-    $self->{state} = 'parse_document_start';
+    $self->state('parse_document_start');
     return $event;
 }
 
@@ -187,55 +283,40 @@ sub process_directives {
     }
 }
 
-sub process_empty_scalar {
-    my ( $self, $mark ) = @_;
-    return YAML::Perl::Event::Scalar->new(
-        anchor     => undef,
-        tag        => undef,
-        implicit   => 1,     # what does (True, False) mean??
-        value      => '',
-        start_mark => $mark,
-        end_mark   => $mark
-    );
-}
-
 sub parse_block_node {
     my $self = shift;
-    return $self->parse_node(1, 0);
+    return $self->parse_node(block => True);
 }
 
 sub parse_flow_node {
     my $self = shift;
-    return $self->parse_node(0, 0);
+    return $self->parse_node();
 }
 
 sub parse_block_node_or_indentless_sequence {
     my $self = shift;
-    return $self->parse_node(1, 1);
+    return $self->parse_node(block => True, indentless_sequence => True);
 }
 
 sub parse_node {
     my $self = shift;
-    assert @_ == 2;
-    my $block = shift;
-    my $indentless_sequence = shift;
+    my ($block, $indentless_sequence) = @{{@_}}{qw(block indentless_sequence)};
     
     my $event;
     if ($self->scanner->check_token('YAML::Perl::Token::Alias')) {
         my $token = $self->get_token();
         $event = YAML::Perl::Event::Alias->new(
-            value      => $token->value,
+            anchor     => $token->value,
             start_mark => $token->start_mark,
             end_mark   => $token->end_mark,
         );
+        $self->state(pop @{$self->states});
     }
-
     else {
         my $anchor = undef;
         my $tag = undef;
         my $implicit = undef;
         my ($start_mark, $end_mark, $tag_mark) = (undef, undef, undef);
-
         if ($self->scanner->check_token('YAML::Perl::Token::Anchor')) {
             my $token = $self->scanner->get_token();
             $start_mark = $token->start_mark;
@@ -249,44 +330,36 @@ sub parse_node {
                 $tag = $token->value;
             }
         }
-
         elsif ($self->scanner->check_token('YAML::Perl::Token::Tag')) {
             my $token = $self->scanner->get_token();
             $start_mark = $token->start_mark;
             $tag_mark = $start_mark;
             $end_mark = $token->end_mark;
-
+            $tag = $token->value;
             if ($self->scanner->check_token('YAML::Perl::Token::Anchor')) {
                 my $token = $self->scanner->get_token();
                 $end_mark = $token->end_mark;
                 $anchor = $token->value;
             }
         }
-
         if (defined $tag) {
             my ($handle, $suffix) = @$tag;
-
             if (defined $handle) {
-
                 if (not exists $self->tag_handles->{$handle}) {
                     throw "while parsing a node... XXX finish this error msg";
                 }
-                $tag = $self->tag_handles->{$handle};
+                $tag = $self->tag_handles->{$handle} . $suffix;
             }
-
             else {
                 $tag = $suffix;
             }
         }
-                
         if (not defined $start_mark) {
             $start_mark = $self->scanner->peek_token()->start_mark;
             $end_mark = $start_mark;
         }
-
         $event = undef;
         $implicit = (not defined $tag) || ($tag eq '!');
-
         if ($indentless_sequence and
             $self->scanner->check_token('YAML::Perl::Token::BlockEntry')
         ) {
@@ -298,26 +371,21 @@ sub parse_node {
                 start_mark => $start_mark,
                 end_mark => $end_mark,
             );
+            $self->state('parse_indentless_sequence_entry');
         }
-        
         else {
-
             if ($self->scanner->check_token('YAML::Perl::Token::Scalar')) {
                 my $token = $self->scanner->get_token();
                 $end_mark = $token->end_mark;
-
                 if (($token->plain and not defined $tag) or $tag eq '!') {
-                    $implicit = [1, 0];
+                    $implicit = [True, False];
                 }
-
                 elsif (not defined $tag) {
-                    $implicit = [0, 1];
+                    $implicit = [False, True];
                 }
-                
                 else {
-                    $implicit = [0, 0];
+                    $implicit = [False, False];
                 }
-
                 $event = YAML::Perl::Event::Scalar->new(
                     anchor => $anchor,
                     tag => $tag,
@@ -327,9 +395,8 @@ sub parse_node {
                     end_mark => $end_mark,
                     style => $token->style,
                 );
-                $self->{state} = pop @{$self->states};
+                $self->state(pop @{$self->states});
             }
-
             elsif ($self->scanner->check_token('YAML::Perl::Token::FlowSequenceStart')) {
                 $end_mark = $self->scanner->peek_token()->end_mark;
                 $event = YAML::Perl::Event::SequenceStart->new(
@@ -338,11 +405,10 @@ sub parse_node {
                     implicit => $implicit,
                     start_mark => $start_mark,
                     end_mark => $end_mark,
-                    flow_style => 1,
+                    flow_style => True,
                 );
-                $self->{state} = 'parse_flow_sequence_first_entry';
+                $self->state('parse_flow_sequence_first_entry');
             }
-
             elsif ($self->scanner->check_token('YAML::Perl::Token::FlowMappingStart')) {
                 $end_mark = $self->scanner->peek_token()->end_mark;
                 $event = YAML::Perl::Event::MappingStart->new(
@@ -351,11 +417,10 @@ sub parse_node {
                     implicit => $implicit,
                     start_mark => $start_mark,
                     end_mark => $end_mark,
-                    flow_style => 1,
+                    flow_style => True,
                 );
-                $self->{state} = 'parse_flow_mapping_first_entry';
+                $self->state('parse_flow_mapping_first_entry');
             }
-
             elsif ($self->scanner->check_token('YAML::Perl::Token::BlockSequenceStart')) {
                 $end_mark = $self->scanner->peek_token()->end_mark;
                 $event = YAML::Perl::Event::SequenceStart->new(
@@ -364,11 +429,10 @@ sub parse_node {
                     implicit => $implicit,
                     start_mark => $start_mark,
                     end_mark => $end_mark,
-                    flow_style => 0,
+                    flow_style => False,
                 );
-                $self->{state} = 'parse_block_sequence_first_entry';
+                $self->state('parse_block_sequence_first_entry');
             }
-
             elsif ($self->scanner->check_token('YAML::Perl::Token::BlockMappingStart')) {
                 $end_mark = $self->scanner->peek_token()->end_mark;
                 $event = YAML::Perl::Event::MappingStart->new(
@@ -377,38 +441,170 @@ sub parse_node {
                     implicit => $implicit,
                     start_mark => $start_mark,
                     end_mark => $end_mark,
-                    flow_style => 0,
+                    flow_style => False,
                 );
-                $self->{state} = 'parse_block_mapping_first_entry';
+                $self->state('parse_block_mapping_first_key');
             }
-
             elsif (defined $anchor or defined $tag) {
                 $event = YAML::Perl::Event::Scalar->new(
                     anchor => $anchor,
                     tag => $tag,
-                    implicit => [$implicit, 0],
+                    implicit => [$implicit, False],
                     value => '',
                     start_mark => $start_mark,
                     end_mark => $end_mark,
                 );
-                $self->{state} = pop @{$self->states};
+                $self->state(pop @{$self->states});
             }
-
             else {
                 my $node = $block ? 'block' : 'flow';
                 my $token = $self->scanner->peek_token();
-                throw "while parsing a $node node, XXX - finish error msg";
+                throw YAML::Perl::Error::Parser(
+                    "while parsing a $node node, XXX - finish error msg"
+                );
             }
         }
     }
     return $event;
 }
 
-sub parse_block_sequence_entry {
+sub parse_block_sequence_first_entry {
     my $self = shift;
     my $token = $self->scanner->get_token();
     push @{$self->marks}, $token->start_mark;
     return $self->parse_block_sequence_entry();
+}
+
+sub parse_block_sequence_entry {
+    my $self = shift;
+    die "parse_block_sequence_entry";
+}
+
+sub parse_indentless_sequence_entry {
+    my $self = shift;
+    die "parse_indentless_sequence_entry";
+}
+
+sub parse_block_mapping_first_key {
+    my $self = shift;
+    my $token = $self->scanner->get_token();
+    push @{$self->marks}, $token->start_mark;
+    return $self->parse_block_mapping_key();
+}
+
+sub parse_block_mapping_key {
+    my $self = shift;
+    if ($self->scanner->check_token('YAML::Perl::Token::Key')) {
+        my $token = $self->scanner->get_token();
+        if (not $self->scanner->check_token(qw(
+            YAML::Perl::Token::Key
+            YAML::Perl::Token::Value
+            YAML::Perl::Token::BlockEnd
+        ))) {
+            push @{$self->states}, 'parse_block_mapping_value';
+            return $self->parse_block_node_or_indentless_sequence();
+        }
+        else {
+            $self->state('parse_block_mapping_value');
+            return $self->process_empty_scalar($token->end_mark);
+        }
+    }
+    if (not $self->scanner->check_token('YAML::Perl::Token::BlockEnd')) {
+        my $token = $self->scanner->peek_token();
+        throw YAML::Perl::Error::Parser(
+            "while parsing a block mapping", $self->marks->[-1],
+            "expected <block end>, but found %r", $token->id, $token->start_mark
+        );
+    }
+    my $token = $self->scanner->get_token();
+    my $event = YAML::Perl::Event::MappingEnd->new(
+        start_mark => $token->start_mark,
+        end_mark => $token->end_mark,
+    );
+    $self->state(pop @{$self->states});
+    pop @{$self->marks};
+    return $event;
+}
+
+sub parse_block_mapping_value {
+    my $self = shift;
+    if ($self->scanner->check_token('YAML::Perl::Token::Value')) {
+        my $token = $self->scanner->get_token();
+        if (not $self->scanner->check_token(qw(
+            YAML::Perl::Token::Key
+            YAML::Perl::Token::Value
+            YAML::Perl::Token::BlockEnd
+        ))) {
+            push @{$self->states}, 'parse_block_mapping_key';
+            return $self->parse_block_node_or_indentless_sequence();
+        }
+        else {
+            $self->state('parse_block_mapping_key');
+            return $self->process_empty_scalar($token->end_mark);
+        }
+    }
+    else {
+        $self->state($self->parse_block_mapping_key);
+        my $token = $self->scanner->peek_token();
+        return $self->process_empty_scalar($token->start_mark);
+    }
+}
+
+sub parse_flow_sequence_first_entry {
+    my $self = shift;
+    die "parse_flow_sequence_first_entry";
+}
+
+sub parse_flow_sequence_entry {
+    my $self = shift;
+    die "parse_flow_sequence_entry";
+}
+
+sub parse_flow_sequence_entry_mapping_key {
+    my $self = shift;
+    die "parse_flow_sequence_entry_mapping_key";
+}
+
+sub parse_flow_sequence_entry_mapping_value {
+    my $self = shift;
+    die "parse_flow_sequence_entry_mapping_value";
+}
+
+sub parse_flow_sequence_entry_mapping_end {
+    my $self = shift;
+    die "parse_flow_sequence_entry_mapping_end";
+}
+
+sub parse_flow_mapping_first_key {
+    my $self = shift;
+    die "parse_flow_mapping_first_key";
+}
+
+sub parse_flow_mapping_key {
+    my $self = shift;
+    die "parse_flow_mapping_key";
+}
+
+sub parse_flow_mapping_value {
+    my $self = shift;
+    die "parse_flow_mapping_value";
+}
+
+sub parse_flow_mapping_empty_value {
+    my $self = shift;
+    die "parse_flow_mapping_empty_value";
+}
+
+sub process_empty_scalar {
+    my ( $self, $mark ) = @_;
+    return YAML::Perl::Event::Scalar->new(
+        anchor     => undef,
+        tag        => undef,
+        implicit   => 1,     # what does (True, False) mean??
+        value      => '',
+        start_mark => $mark,
+        end_mark   => $mark
+    );
 }
 
 1;

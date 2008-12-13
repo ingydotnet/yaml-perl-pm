@@ -11,8 +11,6 @@ __all__ = ['Emitter', 'EmitterError']
 from error import YAMLError
 from events import *
 
-import re
-
 class EmitterError(YAMLError):
     pass
 
@@ -774,17 +772,16 @@ class Emitter(object):
         allow_double_quoted = True
         allow_block = True
 
-        # Leading and trailing whitespace are bad for plain scalars. We also
-        # do not want to mess with leading whitespaces for block scalars.
-        if leading_spaces or leading_breaks or trailing_spaces:
-            allow_flow_plain = allow_block_plain = allow_block = False
-
-        # Trailing breaks are fine for block scalars, but unacceptable for
-        # plain scalars.
-        if trailing_breaks:
+        # Leading and trailing whitespaces are bad for plain scalars.
+        if (leading_spaces or leading_breaks
+                or trailing_spaces or trailing_breaks):
             allow_flow_plain = allow_block_plain = False
 
-        # The combination of (space+ break+) is only acceptable for block
+        # We do not permit trailing spaces for block scalars.
+        if trailing_spaces:
+            allow_block = False
+
+        # Spaces at the beginning of a new line are only acceptable for block
         # scalars.
         if inline_breaks_spaces:
             allow_flow_plain = allow_block_plain = allow_single_quoted = False
@@ -810,7 +807,7 @@ class Emitter(object):
         return ScalarAnalysis(scalar=scalar,
                 empty=False, multiline=line_breaks,
                 allow_flow_plain=allow_flow_plain,
-        
+                allow_block_plain=allow_block_plain,
                 allow_single_quoted=allow_single_quoted,
                 allow_double_quoted=allow_double_quoted,
                 allow_block=allow_block)
@@ -1008,25 +1005,24 @@ class Emitter(object):
             end += 1
         self.write_indicator(u'"', False)
 
-    def determine_chomp(self, text):
-        tail = text[-2:]
-        while len(tail) < 2:
-            tail = u' '+tail
-        if tail[-1] in u'\n\x85\u2028\u2029':
-            if tail[-2] in u'\n\x85\u2028\u2029':
-                return u'+'
-            else:
-                return u''
-        else:
-            return u'-'
+    def determine_block_hints(self, text):
+        hints = u''
+        if text:
+            if text[0] in u' \n\x85\u2028\u2029':
+                hints += unicode(self.best_indent)
+            if text[-1] not in u'\n\x85\u2028\u2029':
+                hints += u'-'
+            elif len(text) == 1 or text[-2] in u'\n\x85\u2028\u2029':
+                hints += u'+'
+        return hints
 
     def write_folded(self, text):
-        chomp = self.determine_chomp(text)
-        self.write_indicator(u'>'+chomp, True)
-        self.write_indent()
-        leading_space = False
+        hints = self.determine_block_hints(text)
+        self.write_indicator(u'>'+hints, True)
+        self.write_line_break()
+        leading_space = True
         spaces = False
-        breaks = False
+        breaks = True
         start = end = 0
         while end <= len(text):
             ch = None
@@ -1072,10 +1068,10 @@ class Emitter(object):
             end += 1
 
     def write_literal(self, text):
-        chomp = self.determine_chomp(text)
+        chomp = self.determine_block_hints(text)
         self.write_indicator(u'|'+chomp, True)
-        self.write_indent()
-        breaks = False
+        self.write_line_break()
+        breaks = True
         start = end = 0
         while end <= len(text):
             ch = None
@@ -1113,7 +1109,7 @@ class Emitter(object):
             if self.encoding:
                 data = data.encode(self.encoding)
             self.stream.write(data)
-        self.writespace = False
+        self.whitespace = False
         self.indention = False
         spaces = False
         breaks = False
@@ -1126,7 +1122,7 @@ class Emitter(object):
                 if ch != u' ':
                     if start+1 == end and self.column > self.best_width and split:
                         self.write_indent()
-                        self.writespace = False
+                        self.whitespace = False
                         self.indention = False
                     else:
                         data = text[start:end]

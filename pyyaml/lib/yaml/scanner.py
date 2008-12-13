@@ -29,6 +29,10 @@ __all__ = ['Scanner', 'ScannerError']
 from error import MarkedYAMLError
 from tokens import *
 
+def XXX(string):
+    print '<' + str(string) + '>',
+    return string
+
 class ScannerError(MarkedYAMLError):
     pass
 
@@ -46,6 +50,7 @@ class SimpleKey(object):
 class Scanner(object):
 
     def __init__(self):
+        # print '+__init__'
         """Initialize the scanner."""
         # It is assumed that Scanner and Reader will have a common descendant.
         # Reader do the dirty work of checking for BOM and converting the
@@ -111,6 +116,7 @@ class Scanner(object):
     # Public methods.
 
     def check_token(self, *choices):
+        # print '+check_token'
         # Check if the next token is one of the given types.
         while self.need_more_tokens():
             self.fetch_more_tokens()
@@ -123,6 +129,7 @@ class Scanner(object):
         return False
 
     def peek_token(self):
+        # print '+peek_token'
         # Return the next token, but do not delete if from the queue.
         while self.need_more_tokens():
             self.fetch_more_tokens()
@@ -130,6 +137,7 @@ class Scanner(object):
             return self.tokens[0]
 
     def get_token(self):
+        # print '+get_token'
         # Return the next token.
         while self.need_more_tokens():
             self.fetch_more_tokens()
@@ -515,6 +523,7 @@ class Scanner(object):
         self.tokens.append(BlockEntryToken(start_mark, end_mark))
 
     def fetch_key(self):
+        # print "+fetch_key"
         
         # Block context needs additional checks.
         if not self.flow_level:
@@ -543,6 +552,7 @@ class Scanner(object):
         self.tokens.append(KeyToken(start_mark, end_mark))
 
     def fetch_value(self):
+        # print "+fetch_value"
 
         # Do we determine a simple key?
         if self.flow_level in self.possible_simple_keys:
@@ -783,6 +793,7 @@ class Scanner(object):
                     self.allow_simple_key = True
             else:
                 found = True
+        ch = self.peek()
 
     def scan_directive(self):
         # See the specification for details.

@@ -231,6 +231,11 @@ sub assert {
     Carp::confess("assert failed") unless $_[0];
 }
 
+sub throw {
+    Carp::confess(@_);
+    Error::Simple->throw(@_);
+}
+
 sub EXPORT_BASE {
     return qw(
         YAML::Perl::Base::True
@@ -240,6 +245,7 @@ sub EXPORT_BASE {
         YAML::Perl::Base::WWW
         YAML::Perl::Base::assert
         YAML::Perl::Base::try
+        YAML::Perl::Base::throw
     );
 }
 
