@@ -3,6 +3,7 @@ use t::TestYAMLPerl tests => 1;
 use YAML::Perl::Parser;
 use YAML::Perl::Events;
 
+spec_file('t/data/parser_emitter');
 filters { yaml => [qw'parse_yaml event_string join'] };
 
 run_is yaml => 'events';
@@ -30,22 +31,3 @@ sub parse_yaml {
     $p->open($_);
     $p->parse();
 }
-
-
-__END__
-=== Emit Works
---- events
-StreamStart
-DocumentStart
-MappingStart
-Scalar value 42
-MappingStart
-Scalar value 53
-Scalar value 64
-MappingEnd
-MappingEnd
-DocumentEnd
-StreamEnd
---- yaml
-42:
-  53: 64
