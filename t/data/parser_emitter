@@ -1,0 +1,22 @@
+=== Mapping in Mapping
+--- events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value 42
+MappingStart
+Scalar value 53
+Scalar value 64
+Scalar value 75
+Scalar value 86
+MappingEnd
+Scalar value 11
+Scalar value 99
+MappingEnd
+DocumentEnd
+StreamEnd
+--- yaml
+42:
+  53: 64
+  75: 86
+11: 99

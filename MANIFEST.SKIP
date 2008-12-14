@@ -1,0 +1,10 @@
+^MANIFEST\.SKIP$
+^Makefile$
+^pm_to_blib$
+^blib
+^\.vimrc$
+^dev
+^pyyaml
+^init.py$
+^Notes$
+^ToDo$
