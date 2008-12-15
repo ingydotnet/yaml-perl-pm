@@ -34,7 +34,9 @@ field 'allow_double_quoted';
 field 'allow_block';
 
 package YAML::Perl::Emitter;
-use YAML::Perl::Base -base;
+use YAML::Perl::Processor -base;
+
+field next_layer => '';
 
 use constant DEFAULT_TAG_PREFIXES => {
     '!' => '!',
@@ -90,10 +92,19 @@ sub init {
 
 sub emit {
     my $self = shift;
-    my $event = shift;
-    push @{$self->events}, $event;
+    my $events = $self->events;
+    if (ref($_[0]) eq 'CODE') {
+        my $iterator = shift;
+        while (my $event = $iterator->()) {
+            push @$events, $event; 
+        }
+    }
+    else {
+        push @$events, @_;
+    }
+
     while (not $self->need_more_events()) {
-        $self->event(shift @{$self->events});
+        $self->event(shift @$events);
         my $state = $self->state;
         $self->$state();
         $self->event(undef);
@@ -463,7 +474,7 @@ sub check_simple_key {
         if (not $self->prepared_tag) {
             $self->prepared_tag($self->prepare_tag($self->event->tag));
         }
-        $length += lenth($self->prepared_tag);
+        $length += length($self->prepared_tag);
     }
     if ($self->event->isa('YAML::Perl::Event::Scalar')) {
         if (not $self->analysis) {
@@ -618,15 +629,127 @@ sub prepare_version {
 }
 
 sub prepare_tag_handle {
-    die 'prepare_tag_handle';
+    my $self = shift;
+    my $handle = shift;
+    if (not $handle) {
+        throw YAML::Perl::Error::Emitter("tag handle must not be empty");
+    }
+    if (substr($handle, 0, 1) ne '!' or substr($handle, -1, 1) ne '!') {
+        throw YAML::Perl::Error::Emitter(
+            "tag handle must start and end with '!': $handle"
+                # .encode('utf-8'))
+        );
+    }
+    for my $ch (split '', substr($handle, 1, length($handle) - 2)) {
+        if (not (
+                $ch ge '0' and $ch le '9' or
+                $ch ge 'A' and $ch le 'Z' or
+                $ch ge 'a' and $ch le 'z' or
+                $ch =~ /^[\-\_]$/
+        )) {
+            throw YAML::Perl::Error::Emitter(
+                "invalid character '$ch' in the tag handle: $handle"
+                # % (ch.encode('utf-8'), handle.encode('utf-8')))
+            );
+        }
+    }
+    return $handle;
 }
 
 sub prepare_tag_prefix {
-    die 'prepare_tag_prefix';
+    my $self = shift;
+    my $prefix = shift;
+    if (not length $prefix) {
+        throw YAML::Perl::Error::Emitter("tag prefix must not be empty");
+    }
+    my $chunks = [];
+    my $start = 0;
+    my $end = 0;
+    if (substr($prefix, 0, 1) eq '!') {
+        $end = 1;
+    }
+    while ($end < length($prefix)) {
+        my $ch = substr($prefix, $end, 1);
+        if ($ch ge '0' and $ch le '9' or
+            $ch ge 'A' and $ch le 'Z' or
+            $ch ge 'a' and $ch le 'z' or
+            $ch =~ /^[\-\;\/\?\!\:\@\&\=\+\$\,\_\.\~\*\\\'\(\)\[\]]$/
+        ) {
+            $end += 1;
+        }
+        else {
+            if ($start < $end) {
+                push @$chunks, substr($prefix, $start, $end);
+            }
+            $start = $end = $end + 1;
+            my $data = $ch; #.encode('utf-8')
+            for $ch (split '', $data) {
+                push @$chunks, sprintf '%%%02X', ord($ch);
+            }
+        }
+    }
+    if ($start < $end) {
+        push @$chunks, substr($prefix, $start, $end);
+    }
+    return join '', @$chunks;
 }
 
 sub prepare_tag {
-    die 'prepare_tag';
+    my $self = shift;
+    my $tag = shift;
+
+    if (not $tag) {
+        throw YAML::Perl::Error::Emitter("tag must not be empty");
+    }
+    if ($tag eq '!') {
+        return $tag;
+    }
+    my $handle = undef;
+    my $suffix = $tag;
+    for my $prefix (keys %{$self->tag_prefixes}) {
+        if (
+            $tag =~ /^\Q$prefix\E/ and
+            ($prefix eq '!' or length($prefix) < length($tag))
+        ) {
+            $handle = $self->tag_prefixes->{$prefix};
+            $suffix = substr($tag, length($prefix));
+        }
+    }
+    my $chunks = [];
+    my $start = 0;
+    my $end = 0;
+    while ($end < length($suffix)) {
+        my $ch = substr($suffix, $end, 1);
+        if (
+            $ch ge '0' and $ch le '9' or
+            $ch ge 'A' and $ch le 'Z' or
+            $ch ge 'a' and $ch le 'z' or
+            $ch =~ /^[\-\;\/\?\:\@\&\=\+\$\,\_\.\~\*\\\'\(\)\[\]]$/ or
+            ($ch eq '!' and $handle ne '!')
+        ) {
+            $end += 1;
+        }
+        else {
+            if ($start < $end) {
+                push @$chunks, substr($suffix, $start, $end - $start);
+            }
+            $start = $end = $end + 1;
+            my $data = $ch;    #.encode('utf-8')
+            for $ch (split '', $data) {
+                push @$chunks, sprintf '%%%02X', ord($ch);
+            }
+        }
+    }
+    if ($start < $end) {
+        push @$chunks, substr($suffix, $start, $start - $end);
+    }
+    my $suffix_text = join '', @$chunks;
+    if ($handle) {
+        return "$handle$suffix_text";
+    }
+    else {
+        return "!<$suffix_text>";
+    }
 }
 
 sub prepare_anchor {
@@ -994,7 +1117,90 @@ sub write_tag_directive {
 }
 
 sub write_single_quoted {
-    die 'write_single_quoted';
+    my $self = shift;
+    my $text = shift;
+    my $split = @_ ? shift : True;
+
+    $self->write_indicator('\'', True);
+    my $spaces = False;
+    my $breaks = False;
+    my $start = 0;
+    my $end = 0;
+    while ($end <= length($text)) {
+        my $ch = undef;
+        if ($end < length($text)) {
+            $ch = substr($text, $end, 1);
+        }
+        if ($spaces) {
+            if (not defined $ch or $ch ne ' ') {
+                if ($start + 1 == $end and
+                    $self->column > $self->best_width and
+                    $split and
+                    $start != 0 and
+                    $end != length($text)
+                ) {
+                    $self->write_indent();
+                }
+                else {
+                    my $data = substr($text, $start, $end - $start);
+                    $self->column($self->column + length($data));
+                    if ($self->encoding) {
+                        # my $data = $data->encode($self->encoding);
+                    }
+                    $self->stream->write($data);
+                }
+                $start = $end;
+            }
+        }
+        elsif ($breaks) {
+            if (not defined $ch or $ch !~ /^[\n\x85\x{2028}\x{2029}]$/) {
+                if (substr($text, $start, 1) eq "\n") {
+                    $self->write_line_break();
+                }
+                for my $br (split '', substr($text, $start, $end - $start)) {
+                    if ($br eq "\n") {
+                        $self->write_line_break();
+                    }
+                    else {
+                        $self->write_line_break($br);
+                    }
+                }
+                $self->write_indent();
+                $start = $end;
+            }
+        }
+        else {
+            if (not defined $ch or
+                $ch =~ /^[\ \n\x85\x{2028}\x{2029}]$/ or
+                $ch eq '\''
+            ) {
+                if ($start < $end) {
+                    my $data = substr($text, $start, $end - $start);
+                    $self->column($self->column + length($data));
+                    if ($self->encoding) {
+                        # $data = $data->encode($self->encoding);
+                    }
+                    $self->stream->write($data);
+                    $start = $end;
+                }
+            }
+        }
+        if ($ch eq '\'') {
+            my $data = '\'\'';
+            $self->column($self->column + 2);
+            if ($self->encoding) {
+                # $data = $data->encode($self->encoding);
+            }
+            $self->stream->write($data);
+            $start = $end + 1;
+        }
+        if (defined $ch) {
+            $spaces = ($ch eq ' ');
+            $breaks = ($ch =~ /^[\n\x85\x{2028}\x{2029}]$/);
+        }
+        $end += 1;
+    }
+    $self->write_indicator('\'', False);
 }
 
 sub write_double_quoted {

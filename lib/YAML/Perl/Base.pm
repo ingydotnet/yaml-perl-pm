@@ -215,6 +215,7 @@ sub field {
 
 sub _dump {
     no warnings 'once';
+    require YAML::XS;
     return YAML::XS::Dump(@_);
 }
 

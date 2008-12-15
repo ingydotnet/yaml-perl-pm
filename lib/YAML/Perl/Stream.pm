@@ -19,4 +19,9 @@ sub write {
     ${$_[0]->buffer} .= $_[1];
 }
 
+sub string {
+    my $self = shift;
+    return ${$self->buffer};
+}
+
 1;

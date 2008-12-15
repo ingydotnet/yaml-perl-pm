@@ -80,17 +80,6 @@ sub LoadFile {
     return Load(do { local $/; <$IN> });
 }
 
-# my $global = {};
-# sub Bless {
-#     require YAML::Perl::Dumper::Base;
-#     YAML::Perl::Dumper::Base::bless($global, @_)
-# }
-# sub Blessed {
-#     require YAML::Perl::Dumper::Base;
-#     YAML::Perl::Dumper::Base::blessed($global, @_)
-# }
-# sub global_object { $global }
-
 1;
 
 =encoding utf8
@@ -98,6 +87,10 @@ sub LoadFile {
 =head1 NAME
 
 YAML::Perl - Pure Perl Port of PyYAML
+
+=head1 WARNING
+
+This is a very early release. Don't even bother to try this version.
 
 =head1 SYNOPSIS
 

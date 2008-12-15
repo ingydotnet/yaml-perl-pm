@@ -2,7 +2,7 @@
 
 package YAML::Perl::Error;
 use strict;
-use warnings;
+# use warnings;
 
 use Error();
 $Error::Debug = 1;

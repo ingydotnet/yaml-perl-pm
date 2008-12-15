@@ -94,18 +94,19 @@ field 'state' => 'parse_stream_start';
 
 sub parse {
     my $self = shift;
-    my @events = ();
-    while ($self->check_event()) {
-        push @events, $self->get_event();
+    if (wantarray) {
+        my @events = ();
+        while ($self->check_event()) {
+            push @events, $self->get_event();
+        }
+        return @events;
     }
-    @events;
+    else {
+        return sub {
+            return $self->check_event() ? $self->get_event() : undef;
+        };
+    }
 }
-
-# sub next {
-#     my $self = shift;
-#     $self->get_event();
-# }
-
 
 sub check_event {
     # print "+check_event\n";
