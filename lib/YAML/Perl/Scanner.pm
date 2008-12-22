@@ -560,7 +560,7 @@ sub fetch_anchor {
     my $self = shift;
     $self->save_possible_simple_key();
     $self->allow_simple_key(False);
-    push @{$self->tokens}, $self->scan_anchor('YAML::Perl::Token::Alias');
+    push @{$self->tokens}, $self->scan_anchor('YAML::Perl::Token::Anchor');
 }
 
 sub fetch_tag {
