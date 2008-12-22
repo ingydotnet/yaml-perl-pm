@@ -558,7 +558,9 @@ sub fetch_alias {
 
 sub fetch_anchor {
     my $self = shift;
-    die "fetch_anchor";
+    $self->save_possible_simple_key();
+    $self->allow_simple_key(False);
+    push @{$self->tokens}, $self->scan_anchor('YAML::Perl::Token::Alias');
 }
 
 sub fetch_tag {
@@ -746,6 +748,41 @@ sub scan_plain {
         end_mark => $end_mark,
     );
 }
+
+sub scan_anchor {
+    my $self = shift;
+    my $token_class = shift;
+    my $start_mark = $self->reader->get_mark();
+    my $indicator = $self->reader->peek();
+    my $name;
+    if ($indicator eq '*') {
+        $name = 'alias';
+    } else {
+        $name = 'anchor';
+    }
+    $self->reader->forward();
+    my $length = 0;
+    my $ch = $self->reader->peek($length);
+    while ($ch =~ /^[0-9A-Za-z-_]$/) {
+        $length += 1;
+        $ch = $self->reader->peek($length);
+    }
+    if (not $length) {
+        throw YAML::Perl::Error::Scanner("while scanning an $name $start_mark expected "
+            . "alphabetic or numeric character, but found " . $self->get_mark());
+    }
+    my $value = $self->reader->prefix($length);
+    $self->reader->forward($length);
+    $ch = $self->reader->peek();
+    if ($ch !~ /^[\0 \t\r\n\x85\u2028\u2029?:,\]}%@]$/) {
+        throw YAML::Perl::Error::Scanner("while scanning an $name $start_mark expected "
+            . "alphabetic or numeric character, but found " . $self->get_mark());
+    }
+    my $end_mark = $self->reader->get_mark();
+    return $token_class->new(value => $value, start_mark => $start_mark, end_mark => $end_mark);
+}
+
+
 
 #   ... ch in u'\r\n\x85\u2028\u2029':
 # XXX needs unicode linefeeds 
