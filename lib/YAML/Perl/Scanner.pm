@@ -553,7 +553,9 @@ sub fetch_value {
 
 sub fetch_alias {
     my $self = shift;
-    die "fetch_alias";
+    $self->save_possible_simple_key();
+    $self->allow_simple_key(False);
+    push @{$self->tokens}, $self->scan_anchor('YAML::Perl::Token::Alias');
 }
 
 sub fetch_anchor {

@@ -478,7 +478,36 @@ sub parse_block_sequence_first_entry {
 
 sub parse_block_sequence_entry {
     my $self = shift;
-    die "parse_block_sequence_entry";
+    if ($self->scanner->check_token('YAML::Perl::Token::BlockEntry')) {
+        my $token = $self->scanner->get_token();
+        if (not $self->scanner->check_token(qw(
+            YAML::Perl::Token::BlockEntry
+            YAML::Perl::Token::BlockEnd
+        ))) {
+            push @{$self->states}, 'parse_block_sequence_entry';
+            return $self->parse_block_node();
+        }
+        else {
+            $self->state('parse_block_sequence_entry');
+            return $self->process_empty_scalar($token->end_mark);
+        }
+    }
+    if (not $self->scanner->check_token('YAML::Perl::Token::BlockEnd')) {
+        my $token = $self->scanner->peek_token();
+        warn $token->value;
+        throw YAML::Perl::Error::Parser(
+            "while parsing a block collection", $self->marks->[-1],
+            "expected <block end>, but found ", $token->id, $token->start_mark
+        );
+    }
+    my $token = $self->scanner->get_token();
+    my $event = YAML::Perl::Event::SequenceEnd->new(
+        start_mark => $token->start_mark,
+        end_mark => $token->end_mark,
+    );
+    $self->state(pop @{$self->states});
+    pop @{$self->marks};
+    return $event;
 }
 
 sub parse_indentless_sequence_entry {
