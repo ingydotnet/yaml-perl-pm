@@ -8,15 +8,15 @@ MappingStart
 Scalar value 53
 Scalar value 64
 Scalar value 75
-Scalar value 86
+Scalar anchor ac1 value 99
 MappingEnd
 Scalar value 11
-Scalar value 99
+Alias anchor ac1
 MappingEnd
 DocumentEnd
 StreamEnd
 --- yaml
 42:
   53: 64
-  75: 86
-11: 99
+  75: &ac1 99
+11: *ac1

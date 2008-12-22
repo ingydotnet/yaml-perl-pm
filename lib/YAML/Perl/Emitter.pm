@@ -326,7 +326,11 @@ sub expect_node {
 
 sub expect_alias {
     my $self = shift;
-    die 'expect_alias';
+    if (not $self->event->anchor) {
+        throw YAML::Perl::Error::Emitter("anchor is not specified for alias");
+    }
+    $self->process_anchor("*");
+    $self->state(pop @{$self->states});
 }
 
 sub expect_scalar {
@@ -753,7 +757,17 @@ sub prepare_tag {
 }
 
 sub prepare_anchor {
-    die 'prepare_anchor';
+    my $self = shift;
+    my $anchor = shift;
+    if (not $anchor) {
+        throw YAML::Perl::Error::Emitter("anchor must not be empty");
+    }
+    foreach my $ch (split('', $anchor)) {
+        if ($ch !~ /[0-9A-Za-z-_]/) {
+            throw YAML::Perl::Error::Emitter("invalid character $ch in the anchor $anchor");
+        }
+    }
+    return $anchor;
 }
 
 sub analyze_scalar {
