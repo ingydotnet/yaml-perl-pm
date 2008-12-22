@@ -280,7 +280,7 @@ sub process_directives {
     $self->{yaml_version} = undef;
     $self->{tag_handles} = {};
     while ($self->scanner->check_token('YAML::Perl::Token::Directive')) {
-        XXX my $token = $self->get_token();
+        XXX my $token = $self->scanner->get_token();
     }
 }
 
@@ -305,7 +305,7 @@ sub parse_node {
     
     my $event;
     if ($self->scanner->check_token('YAML::Perl::Token::Alias')) {
-        my $token = $self->get_token();
+        my $token = $self->scanner->get_token();
         $event = YAML::Perl::Event::Alias->new(
             anchor     => $token->value,
             start_mark => $token->start_mark,
@@ -512,9 +512,10 @@ sub parse_block_mapping_key {
     }
     if (not $self->scanner->check_token('YAML::Perl::Token::BlockEnd')) {
         my $token = $self->scanner->peek_token();
+        warn $token->value;
         throw YAML::Perl::Error::Parser(
             "while parsing a block mapping", $self->marks->[-1],
-            "expected <block end>, but found %r", $token->id, $token->start_mark
+            "expected <block end>, but found ", $token->id, $token->start_mark
         );
     }
     my $token = $self->scanner->get_token();
