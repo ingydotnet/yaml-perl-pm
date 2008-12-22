@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 1;
+use t::TestYAMLPerl tests => 2;
 
 use YAML::Perl::Emitter;
 use YAML::Perl::Events;

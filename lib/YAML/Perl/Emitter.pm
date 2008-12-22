@@ -375,15 +375,30 @@ sub expect_flow_mapping_value {
 }
 
 sub expect_block_sequence {
-    die 'expect_block_sequence';
+    my $self = shift;
+    my $indentless = ($self->mapping_context and not $self->indention);
+    $self->increase_indent(False, $indentless);
+    $self->state('expect_first_block_sequence_item');
 }
 
 sub expect_first_block_sequence_item {
-    die 'expect_first_block_sequence_item';
+    my $self = shift;
+    return $self->expect_block_sequence_item(False);
 }
 
 sub expect_block_sequence_item {
-    die 'expect_block_sequence_item';
+    my $self = shift;
+    my $first = shift || False;
+    if (not $first and $self->event->isa('YAML::Perl::Event::SequenceEnd')) {
+        $self->indent(pop @{$self->indents});
+        $self->state(pop @{$self->states});
+    }
+    else {
+        $self->write_indent();
+        $self->write_indicator('-', True, indention => True);
+        push @{$self->states}, 'expect_block_sequence_item';
+        $self->expect_node(sequence => True);
+    }
 }
 
 sub expect_block_mapping {
@@ -430,7 +445,12 @@ sub expect_block_mapping_value {
 }
 
 sub check_empty_sequence {
-    die 'check_empty_sequence';
+    my $self = shift;
+    return (
+        $self->event->isa('YAML::Perl::Event::SequenceStart') and
+        @{$self->events} and
+        $self->events->[0]->isa('YAML::Perl::Event::MappingEnd')
+    );
 }
 
 sub check_empty_mapping {

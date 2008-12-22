@@ -20,3 +20,19 @@ StreamEnd
   53: 64
   75: &ac1 99
 11: *ac1
+
+=== Block Sequence
+--- events
+StreamStart
+DocumentStart
+SequenceStart
+Scalar value 1
+Scalar value 2
+Scalar value 3
+SequenceEnd
+DocumentEnd
+StreamEnd
+--- yaml
+- 1
+- 2
+- 3
