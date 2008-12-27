@@ -36,10 +36,14 @@ t/api.t
 t/base.t
 t/base_inc.t
 t/class_fields.t
+t/composer.t
+t/constructor.t
 t/data/parser_emitter
 t/emitter.t
 t/events.t
 t/export.t
+t/load.t
+t/loader.t
 t/loader_stack.t
 t/parser.t
 t/TestYAMLPerl.pm

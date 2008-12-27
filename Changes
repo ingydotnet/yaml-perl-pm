@@ -1,4 +1,9 @@
 ---
+version: 0.01_01
+date:    Sat Dec 27 00:54:36 PST 2008
+changes:
+- Entire loader stack working top to bottom, but not fully ported.
+---
 version: 0.01
 date:    Mon Dec 15 01:43:57 PST 2008
 changes:

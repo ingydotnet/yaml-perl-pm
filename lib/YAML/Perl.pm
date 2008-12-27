@@ -5,7 +5,7 @@ use warnings; # XXX requires 5.6+
 use Carp;
 use YAML::Perl::Base -base;
 
-$YAML::Perl::VERSION = '0.01';
+$YAML::Perl::VERSION = '0.01_01';
 
 @YAML::Perl::EXPORT = qw'Dump Load';
 @YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw';
