@@ -1,7 +1,3 @@
-# pyyaml/lib/yaml/__init__.py
-# pyyaml/lib/yaml/loader.py
-# pyyaml/lib/yaml/dumper.py
-
 package YAML::Perl;
 use 5.005003;
 use strict;
@@ -40,7 +36,9 @@ sub Dump {
 }
 
 sub Load {
-    return YAML::Perl->new->loader->load(@_);
+    my $loader = YAML::Perl->new->loader;
+    $loader->open(@_);
+    return ($loader->load());
 }
 
 {

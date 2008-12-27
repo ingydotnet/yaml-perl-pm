@@ -28,9 +28,7 @@ sub compose {
         return @nodes;
     }
     else {
-        return sub {
-            return $self->check_node ? $self->get_node : undef;
-        }
+        return $self->check_node() ? $self->get_node() : ();
     }
 }
 

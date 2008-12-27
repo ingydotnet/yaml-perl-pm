@@ -102,14 +102,11 @@ sub parse {
         return @events;
     }
     else {
-        return sub {
-            return $self->check_event() ? $self->get_event() : undef;
-        };
+        return $self->check_event() ? $self->get_event() : ();
     }
 }
 
 sub check_event {
-    # print "+check_event\n";
     my $self = shift;
     my @choices = @_;
     if (not defined $self->current_event) {
@@ -132,7 +129,6 @@ sub check_event {
 }
 
 sub peek_event {
-    # print "+peek_event\n";
     my $self = shift;
     if (not defined $self->current_event) {
         if (my $state = $self->state) {
@@ -143,11 +139,7 @@ sub peek_event {
 }
 
 sub get_event {
-    # print "+get_event\n";
     my $self = shift;
-    # print $self->state . "\n";
-    # print "  " . $self->scanner->peek_token() . "\n";
-    # print "  [@{$self->scanner->tokens}]\n";
     if (not defined $self->current_event) {
         if (my $state = $self->state) {
             $self->current_event($self->$state());
@@ -155,7 +147,6 @@ sub get_event {
     }
     my $value = $self->current_event;
     $self->current_event(undef);
-    # print "    $value\n";
     return $value;
 }
 

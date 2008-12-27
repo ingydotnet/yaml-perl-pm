@@ -27,20 +27,18 @@ field 'reader_class',      -chain => -onset => '$self->scanner->reader_class($_)
 
 sub load {
     my $self = shift;
-    my $stream = shift;
-    $self->open($stream);
-    my @all_objects = ();
-    while (my @objects = $self->load_next) {
-        push @all_objects, @objects;
+    if (wantarray) {
+        my @data = ();
+        while ($self->constructor->check_data()) {
+            push @data, $self->constructor->get_data();
+        }
+        return @data;
     }
-    return @all_objects;
-}
-
-sub load_next {
-    my $self = shift;
-    return $self->constructor->check_data()
-    ? ($self->constructor->get_data())
-    : ();
+    else {
+        return $self->constructor->check_data()
+            ? $self->constructor->get_data()
+            : ();
+    }
 }
 
 1;

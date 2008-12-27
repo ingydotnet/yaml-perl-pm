@@ -33,16 +33,14 @@ field 'deep_construct' => False;
 sub construct {
     my $self = shift;
     if (wantarray) {
-        my @nodes = ();
+        my @data = ();
         while ($self->check_data()) {
-            push @nodes, $self->get_data();
+            push @data, $self->get_data();
         }
-        return @nodes;
+        return @data;
     }
     else {
-        return sub {
-            return $self->check_data ? $self->get_data : undef;
-        }
+        return $self->check_data() ? $self->get_data() : ();
     }
 }
 

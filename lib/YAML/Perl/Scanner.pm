@@ -75,20 +75,23 @@ field allow_simple_key => True;
 
 field possible_simple_keys => {};
 
-# sub scan {
-#     my $self = shift;
-#     my @events = ();
-#     while ($self->check_token()) {
-#         push @events, $self->get_token();
-#         print "$events[-1]\n";
-#     }
-#     @events;
-# }
+sub scan {
+    my $self = shift;
+    if (wantarray) {
+        my @tokens = ();
+        while ($self->check_token()) {
+            push @tokens, $self->get_token();
+        }
+        return @tokens;
+    }
+    else {
+        return $self->check_token() ? $self->get_token() : ();
+    }
+}
 
 # Public methods.
 
 sub check_token {
-    # print "+check_token\n";
     my $self = shift;
     my @choices = @_;
     while ($self->need_more_tokens()) {
@@ -108,7 +111,6 @@ sub check_token {
 }
 
 sub peek_token {
-    # print "+peek_token\n";
     my $self = shift;
     while ($self->need_more_tokens()) {
         $self->fetch_more_tokens();
@@ -120,7 +122,6 @@ sub peek_token {
 }
 
 sub get_token {
-    # print "+get_token\n";
     my $self = shift;
     while ($self->need_more_tokens()) {
         $self->fetch_more_tokens();
@@ -666,7 +667,6 @@ sub scan_to_next_token {
     }
     my $found = False;
     while (not $found) {
-        # print ">>>> " . $self->reader->peek() . "\n";
         $self->reader->forward()
             while $self->reader->peek() eq ' ';
         if ($self->reader->peek() eq '#') {
@@ -683,7 +683,6 @@ sub scan_to_next_token {
             $found = True;
         }
     }
-    # print "<<<<\n" ;
 }
 
 sub scan_plain {
