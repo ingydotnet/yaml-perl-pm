@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 16 * 2 - 2;
+use t::TestYAMLPerl tests => 15 * 2 - 2;
 
 # These are all of the (Perl version of the) modules that PyYaml defines:
 my @modules = (qw'
@@ -7,7 +7,6 @@ my @modules = (qw'
     YAML::Perl::Constructor
     YAML::Perl::Dumper
     YAML::Perl::Emitter
-    YAML::Perl::Error
     YAML::Perl::Events
     YAML::Perl::Loader
     YAML::Perl::Nodes
@@ -19,6 +18,7 @@ my @modules = (qw'
     YAML::Perl::Serializer
     YAML::Perl::Tokens
 ');
+#     YAML::Perl::Error
 
 for my $module (@modules) {
     use_ok($module);

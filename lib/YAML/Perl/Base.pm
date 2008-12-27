@@ -220,7 +220,9 @@ sub _dump {
 }
 
 sub XXX {
-    CORE::die _dump(@_);
+#     CORE::die _dump(@_);
+    require Carp;
+    Carp::confess(_dump(@_));
 }
 
 sub WWW {
@@ -233,7 +235,7 @@ sub assert {
 }
 
 sub throw {
-    Carp::confess(@_);
+    Carp::confess(join "\n", @_);
     Error::Simple->throw(@_);
 }
 

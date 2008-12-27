@@ -25,4 +25,7 @@ BEGIN {
 package t::TestYAMLPerl::Filter;
 use Test::Base::Filter -base;
 
+sub yaml_load {
+    YAML::XS::Load @_;
+}
 

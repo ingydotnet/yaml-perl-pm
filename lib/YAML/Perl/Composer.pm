@@ -5,6 +5,7 @@ use warnings;
 
 package YAML::Perl::Composer;
 use YAML::Perl::Processor -base;
+use YAML::Perl::Events;
 use YAML::Perl::Nodes;
 
 field 'next_layer' => 'parser';
@@ -16,6 +17,22 @@ field 'resolver_class', 'YAML::Perl::Resolver';
 field 'resolver', -init => '$self->create("resolver")';
 
 field 'anchors' => {};
+
+sub compose {
+    my $self = shift;
+    if (wantarray) {
+        my @nodes = ();
+        while ($self->check_node()) {
+            push @nodes, $self->get_node();
+        }
+        return @nodes;
+    }
+    else {
+        return sub {
+            return $self->check_node ? $self->get_node : undef;
+        }
+    }
+}
 
 sub check_node {
     my $self = shift;
@@ -31,29 +48,43 @@ sub get_node {
     : $self->compose_document();
 }
 
+sub get_single_node {
+    my $self = shift;
+    die "get_single_node";
+}
+
 sub compose_document {
     my $self = shift;
+    # Drop the DOCUMENT-START event.
     $self->parser->get_event;
+
     my $node = $self->compose_node(undef, undef);
+
+    # Drop the DOCUMENT-END event.
+    $self->parser->get_event();
+
     $self->anchors({});
     return $node;
 }
 
 sub compose_node {
     my $self = shift;
-    my ($parent, $index) = @_;
+    my $parent = shift;
+    my $index = shift;
+
     my $node;
     if ($self->parser->check_event('YAML::Perl::Event::Alias')) {
         my $event = $self->parser->get_event();
-        my $anchor = $event->anchor();
-        throw( "found undefined alias $anchor " . $event->start_mark )
-            if ( $self->anchors()->{ $anchor } );
-        return $self->anchors()->{ $anchor };
+        my $anchor = $event->anchor;
+        if (not $self->anchors->{$anchor}) {
+            throw YAML::Perl::Error::Composer(
+                "found undefined alias $anchor ", $event->start_mark
+            );
+        }
+        return $self->anchors->{$anchor};
     }
     my $event = $self->parser->peek_event();
-    # XXX - Why is compose_node receiving a DocumentStart event?
-#     XXX($self->parser);
-    my $anchor = $event->anchor();
+    my $anchor = $event->anchor;
     if ( defined $anchor && $self->anchors()->{ $anchor } ) {
         throw "found duplicate anchor $anchor" 
             . " first occurance " . $self->anchors()->{ $anchor }
@@ -89,6 +120,73 @@ sub compose_scalar_node {
     );
     $self->anchors->{$anchor} = $node
       if defined $anchor;
+    return $node;
+}
+
+sub compose_sequence_node {
+    my $self = shift;
+    my $anchor = shift;
+    my $start_event = $self->parser->get_event();
+    my $tag = $start_event->tag;
+    if (not $tag or $tag eq '!') {
+        $tag = $self->resolver->resolve(
+            'YAML::Perl::Node::Sequence', undef, $start_event->implicit
+        );
+    }
+    my $node = YAML::Perl::Node::Sequence-> new(
+        tag => $tag,
+        value => [],
+        start_mark => $start_event->start_mark,
+        end_mark => undef,
+        flow_style => $start_event->flow_style
+    );
+    if ($anchor) {
+        $self->anchors->{$anchor} = $node;
+    }
+    my $index = 0;
+    while (not $self->parser->check_event('YAML::Perl::Event::SequenceEnd')) {
+        push @{$node->value}, $self->compose_node($node, $index);
+        $index += 1;
+    }
+    my $end_event = $self->parser->get_event();
+    $node->end_mark($end_event->end_mark);
+    return $node;
+}
+
+sub compose_mapping_node {
+    my $self = shift;
+    my $anchor = shift;
+    my $start_event = $self->parser->get_event();
+    my $tag = $start_event->tag;
+    if (not defined $tag or $tag eq '!') {
+        $tag = $self->resolver->resolve(
+            'YAML::Perl::Node::Mapping',
+            undef,
+            $start_event->implicit,
+        );
+    }
+    my $node = YAML::Perl::Node::Mapping->new(
+        tag => $tag,
+        value => [],
+        start_mark => $start_event->start_mark,
+        end_mark => undef,
+        flow_style => $start_event->flow_style,
+    );
+    if ($anchor) {
+        $self->anchors->{$anchor} = $node;
+    }
+    while (not $self->parser->check_event('YAML::Perl::Event::MappingEnd')) {
+        #key_event = self.peek_event()
+        my $item_key = $self->compose_node($node, undef);
+        #if item_key in node.value:
+        #    raise ComposerError("while composing a mapping", start_event.start_mark,
+        #            "found duplicate key", key_event.start_mark)
+        my $item_value = $self->compose_node($node, $item_key);
+        #node.value[item_key] = item_value
+        push @{$node->value}, $item_key, $item_value;
+    }
+    my $end_event = $self->parser->get_event();
+    $node->end_mark($end_event->end_mark);
     return $node;
 }
 

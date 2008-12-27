@@ -4,11 +4,11 @@ StreamStart
 DocumentStart
 MappingStart
 Scalar value 42
-MappingStart
+MappingStart anchor ac1
 Scalar value 53
 Scalar value 64
 Scalar value 75
-Scalar anchor ac1 value 99
+Scalar value 99
 MappingEnd
 Scalar value 11
 Alias anchor ac1
@@ -16,10 +16,21 @@ MappingEnd
 DocumentEnd
 StreamEnd
 --- yaml
-42:
+42: &ac1
   53: 64
-  75: &ac1 99
+  75: 99
 11: *ac1
+--- perl
+my $x = {
+    42 => {
+        53 => 64,
+        75 => 99,
+    },
+};
+$x->{11} = $x->{42};
+$x;
+--- nodes
+xxx
 
 === Block Sequence
 --- events
@@ -36,3 +47,7 @@ StreamEnd
 - 1
 - 2
 - 3
+--- nodes
+xxx
+--- perl
+[ 1, 2, 3]

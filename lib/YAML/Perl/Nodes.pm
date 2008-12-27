@@ -18,7 +18,7 @@ sub stringify {
     my $self = shift;
     my $class = ref($self) || $self;
     my $value = $self->value . "";
-    my $tag = $self->tag . "";
+    my $tag = ($self->tag || '') . "";
     return "$class(tag=$tag, value=$value)";
 }
 
