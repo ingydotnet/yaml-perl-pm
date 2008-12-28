@@ -496,7 +496,7 @@ sub fetch_key {
                 "mapping keys are not allowed here", $self->get_mark()
             );
         }
-        if ($self->add_indent($self->column)) {
+        if ($self->add_indent($self->reader->column)) {
             my $mark = $self->reader->get_mark();
             push @{$self->tokens}, YAML::Perl::Token::BlockMappingStart->new(
                 start_mark=> $mark,
@@ -561,7 +561,7 @@ sub fetch_value {
         # BLOCK-MAPPING-START.  It will be detected as an error later by
         # the parser.
         if (not $self->flow_level) {
-            if ($self->add_indent($self->column)) {
+            if ($self->add_indent($self->reader->column)) {
                 my $mark = $self->reader->get_mark();
                 push @{$self->tokens}, 
                     YAML::Perl::Token::BlockMappingStart(
@@ -608,7 +608,7 @@ sub fetch_tag {
 
 sub fetch_literal {
     my $self = shift;
-    die "fetch_literal";
+    $self->fetch_block_scalar('|');
 }
 
 sub fetch_folded {
@@ -618,7 +618,16 @@ sub fetch_folded {
 
 sub fetch_block_scalar {
     my $self = shift;
-    die "fetch_block_scalar";
+    my $style = shift;
+
+    # A simple key may follow a block scalar.
+    $self->allow_simple_key(True);
+
+    # Reset possible simple key on the current level.
+    $self->remove_possible_simple_key();
+
+    # Scan and add SCALAR.
+    push @{$self->tokens}, $self->scan_block_scalar($style);
 }
 
 sub fetch_single {
@@ -809,17 +818,195 @@ sub scan_tag {
 
 sub scan_block_scalar {
     my $self = shift;
-    die "scan_block_scalar";
+    my $style = shift;
+    # See the specification for details.
+
+    my $folded;
+    if ($style eq '>') {
+        $folded = True;
+    }
+    else {
+        $folded = False;
+    }
+
+    my $chunks = [];
+    my $start_mark = $self->reader->get_mark();
+
+    # Scan the header.
+    $self->reader->forward();
+    my ($chomping, $increment) = $self->scan_block_scalar_indicators($start_mark);
+    $self->scan_block_scalar_ignored_line($start_mark);
+
+    # Determine the indentation level and go to the first non-empty line.
+    my $min_indent = $self->indent + 1;
+    if ($min_indent < 1) {
+        $min_indent = 1;
+    }
+    my ($breaks, $max_indent, $end_mark, $indent);
+    if (not defined $increment) {
+        ($breaks, $max_indent, $end_mark) = $self->scan_block_scalar_indentation();
+        $indent = $min_indent > $max_indent ? $min_indent : $max_indent;
+    }
+    else {
+        $indent = $min_indent + $increment - 1;
+        ($breaks, $end_mark) = $self->scan_block_scalar_breaks($indent);
+    }
+    my $line_break = '';
+
+    # Scan the inner part of the block scalar.
+    while ($self->reader->column == $indent and $self->reader->peek() ne "\0") {
+        push @$chunks, @$breaks;
+        my $leading_non_space = ($self->reader->peek() !~ /^[\ \t]$/);
+        my $length = 0;
+        while ($self->reader->peek($length) !~ /^[\0\r\n\x85\x{2028}\x{2029}]$/) {
+            $length += 1;
+        }
+        push @$chunks, $self->reader->prefix($length);
+        $self->reader->forward($length);
+        $line_break = $self->scan_line_break();
+        ($breaks, $end_mark) = $self->scan_block_scalar_breaks($indent);
+        if ($self->reader->column == $indent and $self->reader->peek() ne "\0") {
+
+            # Unfortunately, folding rules are ambiguous.
+            #
+            # This is the folding according to the specification:
+            
+            if ($folded and
+                $line_break eq "\n" and
+                $leading_non_space and
+                $self->reader->peek() !~ /^[\ \t]$/
+            ) {
+                if (not @$breaks) {
+                    push @$chunks, ' ';
+                }
+            }
+            else {
+                push @$chunks, $line_break;
+            }
+            
+            # This is Clark Evans's interpretation (also in the spec
+            # examples):
+            #
+            #if folded and line_break == u'\n':
+            #    if not breaks:
+            #        if self.peek() not in ' \t':
+            #            chunks.append(u' ')
+            #        else:
+            #            chunks.append(line_break)
+            #else:
+            #    chunks.append(line_break)
+        }
+        else {
+            last;
+        }
+    }
+
+    # Chomp the tail.
+    if (not defined $chomping or $chomping == True) {
+        push @$chunks, $line_break;
+    }
+    if (defined $chomping and $chomping == True) {
+        push @$chunks, @$breaks;
+    }
+
+    # We are done.
+    return YAML::Perl::Token::Scalar->new(
+        value => join('', @$chunks),
+        plain => False,
+        start_mark => $start_mark,
+        end_mark => $end_mark,
+        style => $style,
+    );
 }
 
 sub scan_block_scalar_indicators {
     my $self = shift;
-    die "scan_block_scalar_indicators";
+    my $start_mark = shift;
+
+    # See the specification for details.
+    my $chomping = undef;
+    my $increment = undef;
+    my $ch = $self->reader->peek();
+    if ($ch =~ /^[\+\-]$/) {
+        if ($ch eq '+') {
+            $chomping = True;
+        }
+        else {
+            $chomping = False;
+        }
+        $self->reader->forward();
+        $ch = $self->reader->peek();
+        if ($ch =~ /^[0-9]$/) {
+            $increment = $ch;
+            if ($increment == 0) {
+                throw YAML::Perl::Error::Scanner(
+                    "while scanning a block scalar",
+                    $start_mark,
+                    "expected indentation indicator in the range 1-9, but found 0",
+                    $self->reader->get_mark()
+                );
+            }
+            $self->reader->forward();
+        }
+    }
+    elsif ($ch =~ /^[0-9]$/) {
+        $increment = $ch;
+        if ($increment == 0) {
+            raise ScannerError(
+                "while scanning a block scalar",
+                $start_mark,
+                "expected indentation indicator in the range 1-9, but found 0",
+                $self->reader->get_mark(),
+            );
+        }
+        $self->reader->forward();
+        $ch = $self->reader->peek();
+        if ($ch =~ /^[\+\-]$/) {
+            if ($ch eq '+') {
+                $chomping = True;
+            }
+            else {
+                $chomping = False;
+            }
+            $self->reader->forward();
+        }
+    }
+    $ch = $self->reader->peek();
+    if ($ch !~ /^[\0\ \r\n\x85\x{2028}\x{2029}]$/) {
+        throw YAML::Perl::Error::Scanner(
+            "while scanning a block scalar",
+            $start_mark,
+            "expected chomping or indentation indicators, but found %r",
+            $ch, #.encode('utf-8'),
+            $self->reader->get_mark(),
+        );
+    }
+    return ($chomping, $increment);
 }
 
 sub scan_block_scalar_ignored_line {
-    my $self = shift;
-    die "scan_block_scalar_ignored_line";
+    my $self= shift;
+    my $start_mark = shift;
+    # See the specification for details.
+    while ($self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    if ($self->reader->peek() eq '#') {
+        while ($self->reader->peek() !~ /^[\0\r\n\x85\x{2028}\x{2029}]$/) {
+            $self->reader->forward();
+        }
+    }
+    my $ch = $self->reader->peek();
+    if ($ch !~ /^[\0\r\n\x85\x{2028}\x{2029}]$/) {
+        throw YAML::Perl::Error::Scanner(
+            "while scanning a block scalar",
+            $start_mark,
+            "expected a comment or a line break, but found %r",
+            $ch, #.encode('utf-8'),
+            $self->get_mark(),
+        );
+    }
+    $self->scan_line_break();
 }
 
 sub scan_block_scalar_indentation {
@@ -829,7 +1016,22 @@ sub scan_block_scalar_indentation {
 
 sub scan_block_scalar_breaks {
     my $self = shift;
-    die "scan_block_scalar_breaks";
+    my $indent = shift;
+    # See the specification for details.
+    my $chunks = [];
+    my $end_mark = $self->reader->get_mark();
+    while ($self->reader->column < $indent and $self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    while ($self->reader->peek() =~ /^[\r\n\x85\x{2028}\x{2029}]$/) {
+        push @$chunks, $self->scan_line_break();
+        $end_mark = $self->reader->get_mark();
+        while ($self->reader->column < $indent and $self->reader->peek() eq ' ') {
+            $self->reader->forward();
+        }
+    }
+    return ($chunks, $end_mark)
+
 }
 
 sub scan_flow_scalar {

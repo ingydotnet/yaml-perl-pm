@@ -89,3 +89,12 @@ xxx
 +++ perl
 {'foo\nbar' => "I didn't"}
 
+=== Literal Scalar
++++ yaml
+--- |2
+   ^
+  < >
+   v
++++ perl
+" ^\n< >\n v\n"
+
