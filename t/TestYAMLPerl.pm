@@ -5,6 +5,8 @@ BEGIN {
     $Devel::Trace::TRACE = 1;
 }
 
+delimiters('===', '+++');
+
 # XXX - Preload needed external modules... then shut the door to keep things safe.
 BEGIN {
     use diagnostics -trace;

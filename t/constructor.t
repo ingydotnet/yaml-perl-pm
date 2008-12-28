@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 2;
+use t::TestYAMLPerl; # tests => 3;
 
 use YAML::Perl::Constructor;
 use YAML::Perl::Nodes;

@@ -12,6 +12,7 @@ filters {
 run {
     my $block = shift;
     my (@nodes) = @{$block->{yaml}};
+    return unless $block->{nodes};
     my (@want) = @{$block->{nodes}}; 
     like ref($nodes[0]), qr/^YAML::Perl::Node::/,
         'compose() produces a YAML node';

@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 2;
+use t::TestYAMLPerl; # tests => 4;
 
 use YAML::Perl;
 
