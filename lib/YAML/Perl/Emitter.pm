@@ -649,7 +649,13 @@ sub process_scalar {
 }
 
 sub prepare_version {
-    die 'prepare_version';
+    my $self = shift;
+    my $version = shift;
+    my ($major, $minor) = split('\.', $version);
+    if ($major != 1) {
+        throw YAML::Perl::Error::Emitter->("unsupported YAML version: $major.$minor");
+    }
+    return "$major.$minor";
 }
 
 sub prepare_tag_handle {
@@ -1143,7 +1149,14 @@ sub write_line_break {
 }
 
 sub write_version_directive {
-    die 'write_version_directive';
+    my $self = shift;
+    my $version_text = shift;
+    my $data = "%YAML $version_text";
+    if ($self->encoding) {
+#         $data = $data->encode($self->encoding);
+    }
+    $self->stream->write($data);
+    $self->write_line_break();
 }
 
 sub write_tag_directive {

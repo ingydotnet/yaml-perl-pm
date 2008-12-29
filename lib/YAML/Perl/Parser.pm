@@ -268,11 +268,39 @@ sub parse_document_content {
 
 sub process_directives {
     my $self = shift;
-    $self->{yaml_version} = undef;
-    $self->{tag_handles} = {};
+    $self->yaml_version(undef);
+    $self->tag_handles({});
     while ($self->scanner->check_token('YAML::Perl::Token::Directive')) {
-        XXX my $token = $self->scanner->get_token();
+        my $token = $self->scanner->get_token();
+        if ($token->name eq 'YAML') {
+            if (defined($self->yaml_version)) {
+                throw YAML::Perl::Error::Parser(
+                    "found duplicate YAML directive", $token->start_mark);
+            }
+            my ($major, $minor) = split('\.', $token->value);
+            if ($major != 1) {
+                throw YAML::Perl::Error::Parser(
+                    "found incompatible YAML document (version 1.* is required)",
+                    $token->start_mark);
+            }
+            $self->yaml_version($token->value);
+        }
+        elsif ($token->name eq 'TAG') {
+            # XXX tags not done yet
+        }
     }
+    my $value;
+    if (keys(%{$self->tag_handles})) {
+        # XXX tags not done yet
+        #value = self.yaml_version, self.tag_handles.copy()
+    }
+    else {
+        $value = $self->yaml_version;
+    }
+#     for key in self.DEFAULT_TAGS:
+#         if key not in self.tag_handles:
+#             self.tag_handles[key] = self.DEFAULT_TAGS[key]
+    return $value;
 }
 
 sub parse_block_node {
@@ -485,7 +513,6 @@ sub parse_block_sequence_entry {
     }
     if (not $self->scanner->check_token('YAML::Perl::Token::BlockEnd')) {
         my $token = $self->scanner->peek_token();
-        warn $token->value;
         throw YAML::Perl::Error::Parser(
             "while parsing a block collection", $self->marks->[-1],
             "expected <block end>, but found ", $token->id, $token->start_mark
@@ -532,7 +559,6 @@ sub parse_block_mapping_key {
     }
     if (not $self->scanner->check_token('YAML::Perl::Token::BlockEnd')) {
         my $token = $self->scanner->peek_token();
-        warn $token->value;
         throw YAML::Perl::Error::Parser(
             "while parsing a block mapping", $self->marks->[-1],
             "expected <block end>, but found ", $token->id, $token->start_mark

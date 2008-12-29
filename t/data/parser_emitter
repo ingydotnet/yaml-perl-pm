@@ -98,3 +98,18 @@ xxx
 +++ perl
 " ^\n< >\n v\n"
 
+=== Version Emitter
++++ events
+StreamStart
+DocumentStart version 1.1
+MappingStart
+Scalar value 11
+Scalar value 12
+MappingEnd
+DocumentEnd
+StreamEnd
++++ yaml
+%YAML 1.1
+---
+11: 12
+

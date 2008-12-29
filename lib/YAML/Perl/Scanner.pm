@@ -663,7 +663,10 @@ sub fetch_plain {
 
 sub check_directive {
     my $self = shift;
-    die "check_directive";
+    if ($self->reader->column == 0) {
+        return True;
+    }
+    return;
 }
 
 sub check_document_start {
@@ -740,22 +743,93 @@ sub scan_to_next_token {
 
 sub scan_directive {
     my $self = shift;
-    die "scan_directive";
+    my $start_mark = $self->reader->get_mark();
+    $self->reader->forward();
+    my $name = $self->scan_directive_name($start_mark);
+    my $value = undef;
+    my $end_mark;
+    if ($name eq 'YAML') {
+        $value = $self->scan_yaml_directive_value($start_mark);
+        $end_mark = $self->reader->get_mark();
+    }
+    elsif ($name eq 'TAG') {
+        $value = $self->scan_tag_directive_value($start_mark);
+        $end_mark = $self->reader->get_mark();
+    }
+    else {
+        $end_mark = $self->reader->get_mark();
+        while ($self->reader->peek() !~ /^[\0\r\n\x85\u2028\u2029]$/) {
+            $self->reader->forward();
+        }
+    }
+    $self->scan_directive_ignored_line($start_mark);
+    return YAML::Perl::Token::Directive->new(
+        name       => $name,
+        value      => $value,
+        start_mark => $start_mark,
+        end_mark   => $end_mark
+    );
 }
 
 sub scan_directive_name {
     my $self = shift;
-    die "scan_directive_name";
+    my $start_mark = shift;
+    my $length = 0;
+    my $ch = $self->reader->peek($length);
+    while ($ch =~ /^[0-9A-Za-z-_]$/) {
+        $length += 1;
+        $ch = $self->reader->peek($length);
+    }
+    if (not $length) {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . " expected alphabetic or numeric character, but found $ch ", $self->get_mark());
+    }
+    my $value = $self->reader->prefix($length);
+    $self->reader->forward($length);
+    $ch = $self->reader->peek();
+    if ($ch !~ /^[\0 \r\n\x85\u2028\u2029]$/) {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . " expected alphabetic or numeric character, but found $ch ", $self->get_mark());
+    }
+    return $value;
 }
 
 sub scan_yaml_directive_value {
     my $self = shift;
-    die "scan_yaml_directive_value";
+    my $start_mark = shift;
+    while ($self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    my $major = $self->scan_yaml_directive_number($start_mark);
+    if ($self->reader->peek() ne '.') {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . " expected a digit or '.' but found ", $self->reader->peek(), $self->reader->get_mark());
+    }
+    $self->reader->forward();
+    my $minor = $self->scan_yaml_directive_number($start_mark);
+    if ($self->reader->peek() !~ /^[\0 \r\n\x85\u2028\u2029]$/) {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . " expected alphabetic or numeric character, but found ", $self->reader->peek(),
+            $self->get_mark());
+    }
+    return "$major.$minor"; # XXX this is a tuple in python but...
 }
 
 sub scan_yaml_directive_number {
     my $self = shift;
-    die "scan_yaml_directive_number";
+    my $start_mark = shift;
+    my $ch = $self->reader->peek();
+    if ($ch !~ /^[0-9]$/) {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . " expected a digit but found $ch", $self->reader->get_mark());
+    }
+    my $length = 0;
+    while ($self->reader->peek($length) =~ /^[0-9]$/) {
+        $length += 1;
+    }
+    my $value = int($self->reader->prefix($length));
+    $self->reader->forward($length);
+    return $value;
 }
 
 sub scan_tag_directive_value {
@@ -775,7 +849,21 @@ sub scan_tag_directive_prefix {
 
 sub scan_directive_ignored_line {
     my $self = shift;
-    die "scan_directive_ignored_line";
+    my $start_mark = shift;
+    while ($self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    if ($self->reader->peek() eq '#') {
+        while ($self->reader->peek !~ /^[\0\r\n]$/) {
+            $self->reader->forward();
+        }
+    }
+    my $ch = $self->reader->peek();
+    if ($ch !~ /^[\0\r\n\x85\u2028\u2029]$/) {
+        throw YAML::Perl::Error::Scanner("while scanning a directive $start_mark "
+            . "expected a comment or a line break, but found $ch", $self->reader->get_mark());
+    }
+    return $self->scan_line_break();
 }
 
 sub scan_anchor {

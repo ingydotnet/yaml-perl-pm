@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 2;
+use t::TestYAMLPerl tests => 3;
 
 use YAML::Perl::Parser;
 use YAML::Perl::Events;
@@ -20,6 +20,9 @@ sub event_string {
         my $event = ref($_);
         my $string = $event;
         $string =~ s/^YAML::Perl::Event:://;
+        if ($_->can('version') and $_->version) {
+            $string .= " version " . $_->version;
+        }
         if ($_->can('anchor') and $_->anchor) {
             $string .= " anchor " . $_->anchor;
         }
