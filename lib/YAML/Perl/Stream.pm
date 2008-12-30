@@ -2,17 +2,27 @@ package YAML::Perl::Stream;
 use strict;
 use warnings;
 
+package YAML::Perl::Stream::Input;
 use YAML::Perl::Base -base;
 
-# field 'value', -init => 'do { my $x = ""; \$x }';
+package YAML::Perl::Stream::Input;
+use YAML::Perl::Base -base;
+
+package YAML::Perl::Stream::Output;
+use YAML::Perl::Base -base;
+
 field 'buffer';
 
 sub open {
-    my $class = shift;
-    my $self = $class->new();
-    my $ref = shift;
-    $self->buffer($ref);
-    return $self;
+    my $self = shift;
+    if (not @_) {
+        my $output = '';
+        $self->buffer(\$output); 
+    }
+    else {
+        XXX @_;
+    }
+    return 1;
 }
 
 sub write {

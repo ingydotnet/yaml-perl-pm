@@ -26,10 +26,12 @@ sub add_path_resolver {
 }
 
 sub descend_resolver {
+    return;
     die "descend_resolver";
 }
 
 sub ascend_resolver {
+    return;
     die "ascend_resolver";
 }
 

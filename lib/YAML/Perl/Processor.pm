@@ -17,7 +17,7 @@ sub open {
     $self->$next_layer->open(@_)
       if $next_layer;
     $self->opened(1);
-    return 1;
+    return $self;
 }
 
 sub close {

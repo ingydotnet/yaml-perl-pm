@@ -47,6 +47,10 @@ StreamEnd
 - 1
 - 2
 - 3
++++ yaml2
+- 1
+- 2
+- 3
 +++ nodes
 xxx
 +++ perl

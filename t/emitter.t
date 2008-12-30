@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 3;
+use t::TestYAMLPerl; # tests => 2;
 
 use YAML::Perl::Emitter;
 use YAML::Perl::Events;
@@ -16,7 +16,7 @@ sub make_events {
 }
 
 sub emit_yaml {
-    my $e = YAML::Perl::Emitter->new();
-    $e->emit($_) for @_;
-    ${$e->stream->buffer};
+    YAML::Perl::Emitter->new()
+        ->open()
+        ->emit(@_);
 }

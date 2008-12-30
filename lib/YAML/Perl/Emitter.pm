@@ -6,7 +6,6 @@
 # node ::= SCALAR | sequence | mapping
 # sequence ::= SEQUENCE-START node* SEQUENCE-END
 # mapping ::= MAPPING-START (node node)* MAPPING-END
-
 # To Do:
 # - Make encode stuff work
 
@@ -16,7 +15,7 @@ use warnings;
 
 use YAML::Perl::Error;
 use YAML::Perl::Events;
-use YAML::Perl::Stream;
+use YAML::Perl::Writer;
 
 package YAML::Perl::Error::Emitter;
 use YAML::Perl::Error -base;
@@ -36,14 +35,15 @@ field 'allow_block';
 package YAML::Perl::Emitter;
 use YAML::Perl::Processor -base;
 
-field next_layer => '';
+field next_layer => 'writer';
+field 'writer_class', -init => '"YAML::Perl::Writer"';
+field 'writer', -init => '$self->create("writer")';
 
 use constant DEFAULT_TAG_PREFIXES => {
     '!' => '!',
     'tag:yaml.org,2002:' => '!!',
 };
 
-field 'stream';
 field 'encoding';
 field 'states' => [];
 field 'state' => 'expect_stream_start'; # Made this a function name instead of pointer
@@ -84,24 +84,12 @@ sub init {
         $p{best_line_break} = delete $p{line_break};
     }
     $self->SUPER::init(%p);
-    if (not $self->stream) {
-        my $output = '';
-        $self->stream(YAML::Perl::Stream->open(\ $output)); 
-    }
 }
 
 sub emit {
     my $self = shift;
     my $events = $self->events;
-    if (ref($_[0]) eq 'CODE') {
-        my $iterator = shift;
-        while (my $event = $iterator->()) {
-            push @$events, $event; 
-        }
-    }
-    else {
-        push @$events, @_;
-    }
+    push @$events, @_;
 
     while (not $self->need_more_events()) {
         $self->event(shift @$events);
@@ -109,7 +97,7 @@ sub emit {
         $self->$state();
         $self->event(undef);
     }
-    return ${$self->stream->buffer};
+    return ${$self->writer->stream->buffer};
 }
 
 sub need_more_events {
@@ -1071,8 +1059,8 @@ sub analyze_scalar {
 
 sub flush_stream {
     my $self = shift;
-    if ($self->stream->can('flush')) {
-        $self->stream->flush();
+    if ($self->writer->stream->can('flush')) {
+        $self->writer->stream->flush();
     }
 }
 
@@ -1109,7 +1097,7 @@ sub write_indicator {
     if ($self->encoding) {
 #         my $data = $data->encode($self->encoding);
     }
-    $self->stream->write($data);
+    $self->writer->write($data);
 }
 
 sub write_indent {
@@ -1128,7 +1116,7 @@ sub write_indent {
         if ($self->encoding) {
             # $data = $data->encode($self->encoding); #XXX
         }
-        $self->stream->write($data);
+        $self->writer->write($data);
     }
 }
 
@@ -1145,7 +1133,7 @@ sub write_line_break {
     if ($self->encoding) {
 #         $data = $data->encode($self->encoding);
     }
-    $self->stream->write($data);
+    $self->writer->write($data);
 }
 
 sub write_version_directive {
@@ -1155,7 +1143,7 @@ sub write_version_directive {
     if ($self->encoding) {
 #         $data = $data->encode($self->encoding);
     }
-    $self->stream->write($data);
+    $self->writer->write($data);
     $self->write_line_break();
 }
 
@@ -1279,7 +1267,7 @@ sub write_plain {
         if ($self->encoding) {
 #             $data = $data->encode($self->encoding);
         }
-        $self->stream->write($data);
+        $self->writer->write($data);
     }
     $self->whitespace(False);
     $self->indention(False);
@@ -1338,7 +1326,7 @@ sub write_plain {
                 if ($self->encoding) {
 #                     $data = $data->encode($self->encoding);
                 }
-                $self->stream->write($data);
+                $self->writer->write($data);
                 $start = $end;
             }
         }
