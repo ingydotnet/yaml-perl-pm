@@ -32,7 +32,11 @@ field resolver =>
     -init => '$self->create("resolver")';
 
 sub Dump {
-    return YAML::Perl->new->dumper->dump(@_);
+    my $dumper = YAML::Perl->new()->dumper;
+    $dumper->open();
+    $dumper->dump(@_);
+    $dumper->close;
+    return $dumper->stream;
 }
 
 sub Load {
