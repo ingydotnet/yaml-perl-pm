@@ -26,6 +26,7 @@ lib/YAML/Perl/Scanner.pm
 lib/YAML/Perl/Serializer.pm
 lib/YAML/Perl/Stream.pm
 lib/YAML/Perl/Tokens.pm
+lib/YAML/Perl/Writer.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
@@ -39,6 +40,8 @@ t/class_fields.t
 t/composer.t
 t/constructor.t
 t/data/parser_emitter
+t/dump.t
+t/dumper.t
 t/emitter.t
 t/events.t
 t/export.t
@@ -46,4 +49,6 @@ t/load.t
 t/loader.t
 t/loader_stack.t
 t/parser.t
+t/representer.t
+t/serializer.t
 t/TestYAMLPerl.pm

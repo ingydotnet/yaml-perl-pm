@@ -149,8 +149,3 @@ StreamEnd
 ---
 11: 12
 
-=== String
-+++ perl
-'abc'
-+++ dump
---- abc
