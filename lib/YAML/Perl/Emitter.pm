@@ -218,6 +218,7 @@ sub expect_document_start {
             not $self->event->tags and
             not $self->check_empty_document()
         );
+        $implicit = False; # XXX Different than PyYaml
         if (not $implicit) {
             $self->write_indent();
             $self->write_indicator('---', True);
@@ -924,7 +925,7 @@ sub analyze_scalar {
 
     # Last character or followed by a whitespace.
     my $followed_by_space =
-        (length($scalar) == 1 or $scalar =~ /.[\0 \t\r\n\x85\x{2028}\x{2029}]/);
+        (length($scalar) == 1 or $scalar =~ /^.[\0 \t\r\n\x85\x{2028}\x{2029}]/s);
 
     # The current series of whitespaces contain plain spaces.
     my $spaces = False;
@@ -1065,7 +1066,7 @@ sub analyze_scalar {
         }
 
         # Series of whitespaces reach the end.
-        if (($spaces or $breaks) and ($index == length($scalar)-1)) {
+        if (($spaces or $breaks) and ($index == (length($scalar) - 1))) {
             if ($spaces and $breaks) {
                 $mixed_breaks_spaces = True;
             }
@@ -1089,7 +1090,7 @@ sub analyze_scalar {
         $preceeded_by_space = ($ch =~ /^[\0 \t\r\n\x85\x{2028}\x{2029}]$/);
         $followed_by_space = (
             $index + 1 >= length($scalar) or
-            substr($scalar, index+1, 1) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
+            substr($scalar, index + 1, 1) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
         );
     }
 
@@ -1315,7 +1316,7 @@ sub write_single_quoted {
                 }
             }
         }
-        if ($ch eq '\'') {
+        if ($ch and $ch eq '\'') {
             my $data = '\'\'';
             $self->column($self->column + 2);
             if ($self->encoding) {

@@ -16,11 +16,13 @@ MappingEnd
 DocumentEnd
 StreamEnd
 +++ yaml
+---
 42: &ac1
   53: 64
   75: 99
 11: *ac1
 +++ dump
+---
 11: &id001
   53: 64
   75: 99
@@ -49,10 +51,12 @@ SequenceEnd
 DocumentEnd
 StreamEnd
 +++ yaml
+---
 - 1
 - 2
 - 3
 +++ yaml2
+---
 - 1
 - 2
 - 3
@@ -61,6 +65,7 @@ xxx
 +++ perl
 [ 1, 2, 3]
 +++ dump
+---
 - 1
 - 2
 - 3
@@ -72,6 +77,7 @@ xxx
 +++ perl
 {a => 'b'}
 +++ dump
+---
 a: b
 
 === Flow Sequence
@@ -85,6 +91,7 @@ a: b
 [1,3,5]
 
 +++ dump
+---
 - 1
 - 3
 - 5
@@ -142,3 +149,8 @@ StreamEnd
 ---
 11: 12
 
+=== String
++++ perl
+'abc'
++++ dump
+--- abc
