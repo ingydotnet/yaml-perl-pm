@@ -1,5 +1,3 @@
-# pyyaml/lib/yaml/serializer.py
-
 package YAML::Perl::Serializer;
 use strict;
 use warnings;
@@ -35,7 +33,7 @@ field 'closed';
 sub serialize {
     my $self = shift;
     for my $node (@_) {
-        $self->serialize_doc($node);
+        $self->serialize_document($node);
     }
     return ${$self->emitter->writer->stream->buffer};
 }
@@ -58,7 +56,7 @@ sub close {
     return $self;
 }
 
-sub serialize_doc {
+sub serialize_document {
     my $self = shift;
     my $node = shift;
 #     if self.closed is None:
@@ -100,7 +98,7 @@ sub anchor_node {
             }
         }
         elsif ($node->isa('YAML::Perl::Node::Mapping')) {
-            for (my $i; $i < @{$node->value}; $i += 2) {
+            for (my $i = 0; $i < @{$node->value}; $i += 2) {
                 my $key = $node->value->[$i];
                 my $value = $node->value->[$i + 1];
                 $self->anchor_node($key);
@@ -127,7 +125,7 @@ sub serialize_node {
     if ($self->serialized_nodes->{$node}) {
         $self->emitter->emit(
             YAML::Perl::Event::Alias->new(
-                alias => $alias,
+                anchor => $alias,
             )
         );
     }
@@ -158,7 +156,7 @@ sub serialize_node {
             ));
         }
         elsif ($node->isa('YAML::Perl::Node::Sequence')) {
-            my $implicit = $node->tag eq $self->resolver->resolve(
+            my $implicit = ($node->tag || '') eq $self->resolver->resolve(
                 'YAML::Perl::Node::Sequence',
                 $node->value,
                 True
@@ -177,7 +175,7 @@ sub serialize_node {
             $self->emitter->emit(YAML::Perl::Event::SequenceEnd->new());
         }
         elsif ($node->isa('YAML::Perl::Node::Mapping')) {
-            my $implicit = $node->tag eq $self->resolver->resolve(
+            my $implicit = ($node->tag || '') eq $self->resolver->resolve(
                 'YAML::Perl::Node::Mapping',
                 $node->value,
                 True
@@ -188,7 +186,7 @@ sub serialize_node {
                 implicit => $implicit,
                 flow_style => $node->flow_style
             ));
-            for (my $i; $i < @{$node->value}; $i += 2) {
+            for (my $i = 0; $i < @{$node->value}; $i += 2) {
                 my $key = $node->value->[$i];
                 my $value = $node->value->[$i + 1];
                 $self->serialize_node($key, $node, undef);

@@ -1,5 +1,3 @@
-# pyyaml/lib/yaml/nodes.py
-
 package YAML::Perl::Nodes;
 use strict;
 use warnings;
