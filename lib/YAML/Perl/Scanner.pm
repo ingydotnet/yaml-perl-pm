@@ -683,7 +683,14 @@ sub check_document_start {
 
 sub check_document_end {
     my $self = shift;
-    die "check_document_end";
+    if ($self->reader->column == 0) {
+        if ($self->reader->prefix(3) eq '...' and
+            $self->reader->peek(3) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
+        ) {
+            return True;
+        }
+    }
+    return;
 }
 
 sub check_block_entry {
@@ -1383,7 +1390,8 @@ sub scan_plain {
         $self->reader->forward($length);
         $end_mark = $self->reader->get_mark();
         $spaces = $self->scan_plain_spaces($indent, $start_mark);
-        if (not @$spaces or $self->reader->peek() eq '#' or
+        if (not defined $spaces or not @$spaces or
+            $self->reader->peek() eq '#' or
             (not $self->flow_level and $self->reader->column < $indent)
         ) {
             last;

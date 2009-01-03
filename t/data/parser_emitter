@@ -149,3 +149,18 @@ StreamEnd
 ---
 11: 12
 
+=== Document End
++++ events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value 1
+Scalar value 2
+MappingEnd
+DocumentEnd
+StreamEnd
++++ yaml
+---
+1: 2
+...
+
