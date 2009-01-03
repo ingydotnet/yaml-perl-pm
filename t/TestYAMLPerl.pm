@@ -13,6 +13,7 @@ BEGIN {
     use Scalar::Util;
 #     use Data::Dumper;
     use YAML();
+#     use XXX;
     use YAML::Dumper();
     use YAML::XS();
     use Test::Base::Filter;
@@ -31,3 +32,14 @@ sub yaml_load {
     YAML::XS::Load @_;
 }
 
+# use XXX;
+sub assert_dump_for_emit {
+    my $values = $self->{current_block}{original_values};
+    for my $key (qw(dump dump_emit yaml)) {
+        my $value = $values->{$key} or next;
+        next unless $value =~ /\S/;
+        $value =~ s/\n+\z/\n/;
+        return $value;
+    }
+    return '';
+}

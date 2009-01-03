@@ -700,7 +700,15 @@ sub check_block_entry {
 
 sub check_key {
     my $self = shift;
-    die "check_key";
+    # KEY(flow context):    '?'
+    if ($self->flow_level) {
+        return True;
+    }
+
+    # KEY(block context):   '?' (' '|'\n')
+    else {
+        return ($self->reader->peek(1) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/);
+    }
 }
 
 sub check_value {

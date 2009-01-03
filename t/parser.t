@@ -1,4 +1,4 @@
-use t::TestYAMLPerl tests => 3;
+use t::TestYAMLPerl; # tests => 3;
 
 use YAML::Perl::Parser;
 use YAML::Perl::Events;
@@ -27,7 +27,9 @@ sub event_string {
             $string .= " anchor " . $_->anchor;
         }
         if ($event =~ /::Scalar$/) {
-            $string .= " value " . $_->value;
+            my $value = $_->value;
+            $value =~ s/\n/\\n/g;
+            $string .= " value $value";
         }
         $string .= "\n";
     } @_;

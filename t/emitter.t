@@ -4,14 +4,20 @@ use YAML::Perl::Emitter;
 use YAML::Perl::Events;
 
 spec_file('t/data/parser_emitter');
-filters { events => [qw(lines chomp make_events emit_yaml)] };
+filters {
+    events => [qw(lines chomp make_events emit_yaml)],
+    dump => 'assert_dump_for_emit',
+};
 
-run_is events => 'yaml';
+run_is events => 'dump';
 
 sub make_events {
     map {
-       my ($event, @args) = split;
-       "YAML::Perl::Event::$event"->new(@args);
+       my ($event, %args) = split;
+       if (defined $args{value}) {
+           $args{value} =~ s/\\n/\n/g;
+       }
+       "YAML::Perl::Event::$event"->new(%args);
    } @_;
 }
 

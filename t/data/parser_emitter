@@ -1,4 +1,19 @@
 === Mapping in Mapping with Alias
++++ perl
+my $x = {
+    42 => {
+        53 => 64,
+        75 => 99,
+    },
+};
+$x->{11} = $x->{42};
+$x;
++++ yaml
+---
+42: &ac1
+  53: 64
+  75: 99
+11: *ac1
 +++ events
 StreamStart
 DocumentStart
@@ -15,29 +30,15 @@ Alias anchor ac1
 MappingEnd
 DocumentEnd
 StreamEnd
-+++ yaml
----
-42: &ac1
-  53: 64
-  75: 99
-11: *ac1
-+++ dump
++++ dump_dumper
 ---
 11: &id001
   53: 64
   75: 99
 42: *id001
-+++ perl
-my $x = {
-    42 => {
-        53 => 64,
-        75 => 99,
-    },
-};
-$x->{11} = $x->{42};
-$x;
 +++ nodes
 xxx
++++ dump
 
 === Block Sequence
 +++ events
@@ -65,10 +66,6 @@ xxx
 +++ perl
 [ 1, 2, 3]
 +++ dump
----
-- 1
-- 2
-- 3
 
 === Flow Mapping
 +++ yaml
@@ -129,6 +126,12 @@ a: b
    ^
   < >
    v
++++ eventsx
+StreamStart
+DocumentStart
+Scalar value  ^\n< >\n v\n
+DocumentEnd
+StreamEnd
 +++ perl
 " ^\n< >\n v\n"
 +++ dumpx
@@ -148,6 +151,7 @@ StreamEnd
 %YAML 1.1
 ---
 11: 12
++++ dump
 
 === Document End
 +++ events
@@ -163,4 +167,24 @@ StreamEnd
 ---
 1: 2
 ...
++++ dump
+---
+1: 2
 
+=== Mapping Key
++++ events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value 1
+Scalar value 2
+MappingEnd
+DocumentEnd
+StreamEnd
++++ yaml
+---
+? 1
+: 2
++++ dump
+---
+1: 2
