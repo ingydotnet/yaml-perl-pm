@@ -4,8 +4,10 @@ use strict;
 use Data::Dumper;
 use Test::More;
 use YAML::Perl ();
-use YAML::XS ();
 use Math::BigFloat;     # supposedly a core module
+
+eval { require YAML::XS };
+plan skip_all => 'Need YAML::XS to run the round trip test' if $@;
 
 plan tests => 4;
 
