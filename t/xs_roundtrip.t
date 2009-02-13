@@ -11,6 +11,7 @@ plan skip_all => 'Need YAML::XS to run the round trip test' if $@;
 
 plan tests => 4;
 
+$Data::Dumper::Sortkeys = 1;
 my $f = Math::BigFloat->new (3.14159265);
 
 my %loaders = (
@@ -33,6 +34,7 @@ for my $dumper (keys %dumpers) {
         eval { $f_load  = $loaders{$loader}->($f_dump) };
 #           diag "Exception during processing of a $dumper dump with the $loader loader:\n\n$@" if $@;
 
-        is_deeply ($f, $f_load, "Round trip with a $dumper dump and a $loader loader");
+        is_deeply ($f_load, $f, "Round trip with a $dumper dump and a $loader loader")
+            || diag Dumper { begin => $f, dump => $f_dump, dump_load => $f_load };
     }
 }
