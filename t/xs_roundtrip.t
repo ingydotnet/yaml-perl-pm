@@ -12,7 +12,7 @@ plan skip_all => 'Need YAML::XS to run the round trip test' if $@;
 plan tests => 4;
 
 $Data::Dumper::Sortkeys = 1;
-my $f = Math::BigFloat->new (3.14159265);
+my $f = Math::BigFloat->new(3.14159265);
 
 my %loaders = (
     pp => sub { YAML::Perl::Load (@_) },
@@ -23,13 +23,13 @@ my %dumpers = (
     xs => sub { YAML::XS::Dump (@_) },
 );
 
-for my $dumper (keys %dumpers) {
+for my $dumper (sort keys %dumpers) {
 
     my $f_dump;
     eval { $f_dump = $dumpers{$dumper}->($f) };
 #    diag "Exception during dumping an object with a $dumper dumper:\n\n$@" if $@;
 
-    for my $loader (keys %loaders)  {
+    for my $loader (sort keys %loaders)  {
         my $f_load;
         eval { $f_load  = $loaders{$loader}->($f_dump) };
 #           diag "Exception during processing of a $dumper dump with the $loader loader:\n\n$@" if $@;

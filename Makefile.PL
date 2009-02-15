@@ -6,8 +6,7 @@ all_from 'lib/YAML/Perl.pm';
 
 requires 'Error'                => 0;
 
-test_requires 'Test::Base'      => 0;
-test_requires 'Devel::Trace'    => 0;
+use_test_base;
 
 clean_files 'pyyaml/lib/yaml/*.pyc';
 

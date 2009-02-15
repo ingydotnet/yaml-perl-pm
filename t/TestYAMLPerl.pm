@@ -1,9 +1,5 @@
 package t::TestYAMLPerl;
 use Test::Base -Base;
-use Devel::Trace;
-BEGIN {
-    $Devel::Trace::TRACE = 1;
-}
 
 delimiters('===', '+++');
 
