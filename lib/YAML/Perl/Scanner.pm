@@ -1176,7 +1176,22 @@ sub scan_block_scalar_ignored_line {
 
 sub scan_block_scalar_indentation {
     my $self = shift;
-    die "scan_block_scalar_indentation";
+    my $chunks = [];
+    my $max_indent = 0;
+    my $end_mark = $self->reader->get_mark();
+    while ($self->reader->peek() =~ /^[\ \r\n\x85\x{2028}\x{2029}]$/) {
+        if ($self->reader->peek() ne ' ') {
+            push @$chunks, $self->scan_line_break();
+            $end_mark = $self->reader->get_mark();
+        }
+        else {
+            $self->reader->forward();
+            if ($self->reader->column > $max_indent) {
+                $max_indent = $self->reader->column;
+            }
+        }
+    }
+    return $chunks, $max_indent, $end_mark;
 }
 
 sub scan_block_scalar_breaks {

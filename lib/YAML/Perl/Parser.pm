@@ -255,7 +255,10 @@ sub parse_document_end {
 sub parse_document_content {
     my $self = shift;
     if ( $self->scanner->check_token( 
-        map "YAML::Perl::Token::${_}", qw/ DocumentStart DocumentEnd StreamEnd / 
+        'YAML::Perl::Token::Directive',
+        'YAML::Perl::Token::DocumentStart',
+        'YAML::Perl::Token::DocumentEnd',
+        'YAML::Perl::Token::StreamEnd',
     ) ) {
         my $event = $self->process_empty_scalar( $self->scanner->peek_token()->start_mark() );
         $self->state( pop @{ $self->states() } );

@@ -188,3 +188,17 @@ StreamEnd
 +++ dump
 ---
 1: 2
+
+=== Block Literal
++++ events
+StreamStart
+DocumentStart
+Scalar value sub la {\n  ...\n}\n
+DocumentEnd
+StreamEnd
++++ yaml
+--- |
+  sub la {
+    ...
+  }
+
