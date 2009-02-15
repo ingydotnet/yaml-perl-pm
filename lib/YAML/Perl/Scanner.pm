@@ -615,7 +615,7 @@ sub fetch_literal {
 
 sub fetch_folded {
     my $self = shift;
-    die "fetch_folded";
+    $self->fetch_block_scalar('>');
 }
 
 sub fetch_block_scalar {

@@ -212,3 +212,16 @@ DocumentEnd
 StreamEnd
 +++ yaml
 --- "aaa\x3cbbb\\ccc"
+
+=== Folded
++++ events
+StreamStart
+DocumentStart
+Scalar value Foo Bar Baz\n
+DocumentEnd
+StreamEnd
++++ yaml
+--- >
+  Foo
+  Bar
+  Baz
