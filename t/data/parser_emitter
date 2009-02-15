@@ -202,3 +202,13 @@ StreamEnd
     ...
   }
 
+
+=== Escapes
++++ events
+StreamStart
+DocumentStart
+Scalar value aaa<bbb\ccc
+DocumentEnd
+StreamEnd
++++ yaml
+--- "aaa\x3cbbb\\ccc"

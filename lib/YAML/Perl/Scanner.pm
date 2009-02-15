@@ -1272,8 +1272,8 @@ use constant ESCAPE_REPLACEMENTS => {
 
 use constant ESCAPE_CODES => {
     'x' => 2,
-    '' => 4,
-    '' => 8,
+    'u' => 4,
+    'U' => 8,
 };
 
 sub scan_flow_scalar_non_spaces {
@@ -1314,7 +1314,7 @@ sub scan_flow_scalar_non_spaces {
                 $length = ESCAPE_CODES->{$ch};
                 $self->reader->forward();
                 for my $k (0 .. ($length - 1)) {
-                    if ($self->peek($k) !~ /^[0123456789ABCDEFabcdef]$/) {
+                    if ($self->reader->peek($k) !~ /^[0123456789ABCDEFabcdef]$/) {
                         throw YAML::Perl::Error::Scanner(
                             "while scanning a double-quoted scalar",
                             $start_mark,
@@ -1341,7 +1341,7 @@ sub scan_flow_scalar_non_spaces {
                     $start_mark,
                     "found unknown escape character %r",
                     $ch, #.encode('utf-8'),
-                    $self->get_mark()
+                    $self->reader->get_mark()
                 );
             }
         }
