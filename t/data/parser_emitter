@@ -225,3 +225,21 @@ StreamEnd
   Foo
   Bar
   Baz
+
+=== Indentless Sequence
++++ events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value foo
+SequenceStart
+Scalar value 1
+Scalar value 2
+SequenceEnd
+MappingEnd
+DocumentEnd
+StreamEnd
++++ yaml
+foo:
+- 1
+- 2

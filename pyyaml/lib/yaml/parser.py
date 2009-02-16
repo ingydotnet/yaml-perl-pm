@@ -413,7 +413,7 @@ class Parser(object):
                 self.state = self.parse_indentless_sequence_entry
                 return self.process_empty_scalar(token.end_mark)
         token = self.peek_token()
-        event = SequenceEndEvent(token.start_mark, token.start_mark)
+        event = SequenceEndEvent(token.start_mark, token.start_mark) # XXX!
         self.state = self.states.pop()
         return event
 

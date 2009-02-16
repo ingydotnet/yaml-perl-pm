@@ -533,7 +533,30 @@ sub parse_block_sequence_entry {
 
 sub parse_indentless_sequence_entry {
     my $self = shift;
-    die "parse_indentless_sequence_entry";
+    my $token;
+    if ($self->scanner->check_token('YAML::Perl::Token::BlockEntry')) {
+        $token = $self->scanner->get_token();
+        if (not $self->scanner->check_token(
+                'YAML::Perl::Token::BlockEntry',
+                'YAML::Perl::Token::Key',
+                'YAML::Perl::Token::Value',
+                'YAML::Perl::Token::BlockEnd',
+            )) {
+            push @{$self->states}, 'parse_indentless_sequence_entry';
+            return $self->parse_block_node();
+        }
+        else {
+            $self->state('parse_indentless_sequence_entry');
+            return $self->process_empty_scalar($token->end_mark);
+        }
+    }
+    $token = $self->scanner->peek_token();
+    my $event = YAML::Perl::Event::SequenceEnd->new(
+        start_mark => $token->start_mark,
+        end_mark => $token->end_mark,
+    );
+    $self->state(pop @{$self->states});
+    return $event;
 }
 
 sub parse_block_mapping_first_key {
