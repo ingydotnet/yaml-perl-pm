@@ -394,7 +394,7 @@ sub expect_first_flow_mapping_key {
         $self->indent(pop @{$self->indents});
         $self->flow_level($self->flow_level - 1);
         $self->write_indicator('}', False);
-        self->state(pop @{$self->states});
+        $self->state(pop @{$self->states});
     }
     else {
         if ($self->canonical or $self->column > $self->best_width) {

@@ -11,6 +11,7 @@ field 'tag';
 field 'value';
 field 'start_mark';
 field 'end_mark';
+field 'style';
 
 sub stringify {
     my $self = shift;

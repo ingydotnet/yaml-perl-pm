@@ -243,3 +243,10 @@ StreamEnd
 foo:
 - 1
 - 2
+
+=== Hash in array
++++ perl
+[{}]
++++ dump
+---
+- {}

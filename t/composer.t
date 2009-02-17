@@ -11,6 +11,7 @@ filters {
 
 run {
     my $block = shift;
+    return unless $block->{yaml};
     my (@nodes) = @{$block->{yaml}};
     return unless $block->{nodes};
     my (@want) = @{$block->{nodes}}; 
