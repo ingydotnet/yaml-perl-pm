@@ -231,11 +231,15 @@ sub WWW {
 }
 
 sub assert {
+    require Carp;
     Carp::confess("assert failed") unless $_[0];
 }
 
 sub throw {
-    Carp::confess(join "\n", @_);
+    require Carp;
+    my $error = (join " ", map {my $val = "$_"; $val =~ s/\s*\z//; $val} @_) . "\n";
+    Carp::croak($error);
+    Carp::confess($error);
     Error::Simple->throw(@_);
 }
 

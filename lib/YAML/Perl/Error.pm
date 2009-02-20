@@ -60,7 +60,7 @@ use overload '""' => sub {
     my $self = shift;
     my $snippet = $self->get_snippet();
     my $where = sprintf
-        '  in "%s", line %d, column %d',
+        'in "%s", line %d, column %d',
         $self->name, $self->line + 1, $self-> column + 1;
     if (defined $snippet) {
         $where += ":\n$snippet";
