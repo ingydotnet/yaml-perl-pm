@@ -278,9 +278,8 @@ The YAML toolset is made up of a bunch of modules that are object
 oriented. All these modules inherit from YAML::Perl::Base, directly or
 eventually.
 
-In the spirit of Spiffyness (but without source filtering or
-dependencies) YAML::Perl::Base provides the C<field> accessor generator to all
-its subclasses. It also provides XXX for debugging with YAML::XS.
+YAML::Perl::Base provides the C<field> accessor generator to all its
+subclasses. It also provides XXX for debugging with YAML::XS.
 
 Additionally YAML::Perl::Base provides default C<new> and C<init> class
 methods for object construction.
