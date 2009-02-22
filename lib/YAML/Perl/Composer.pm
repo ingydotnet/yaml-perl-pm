@@ -47,8 +47,9 @@ sub get_node {
 }
 
 sub get_single_node {
-    my $self = shift;
-    die "get_single_node";
+    # We won't implement this.
+    # The PyYaml version throws an error when composing a single node but
+    # multiple nodes exist. In Perl we will allow this for iteration.
 }
 
 sub compose_document {
