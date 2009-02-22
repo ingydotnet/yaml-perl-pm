@@ -1,6 +1,7 @@
 package YAML::Perl::Representer;
 use strict;
 use warnings;
+use overload();
 
 use YAML::Perl::Error;
 use YAML::Perl::Nodes;
@@ -86,7 +87,7 @@ sub represent_data {
 #     #if alias_key is not None:
 #     #    self.represented_objects[alias_key] = node
 
-    if (not ref($data)) {
+    if (not ref($data) or overload::Method($data, '""')) {
         $node = $self->represent_scalar(undef, $data);
     }
     elsif (ref($data) eq 'ARRAY') {
