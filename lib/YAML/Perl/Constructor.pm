@@ -60,7 +60,8 @@ sub get_data {
 }
 
 sub get_single_data {
-    die "get_single_data";
+    # We won't port this. We allow scalar construction of a single node in a
+    # multi document stream.
 }
 
 sub construct_document {
