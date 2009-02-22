@@ -2,7 +2,6 @@ package YAML::Perl;
 use 5.005003;
 use strict;
 use warnings; # XXX requires 5.6+
-use Carp;
 use YAML::Perl::Base -base;
 
 $YAML::Perl::VERSION = '0.01_03';
@@ -10,22 +9,20 @@ $YAML::Perl::VERSION = '0.01_03';
 @YAML::Perl::EXPORT = qw'Dump Load';
 @YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw';
 
+print field foo => 'bar';
 field dumper_class => -chain,
-    -class => '-init',
     -init => '$YAML::Perl::DumperClass || $YAML::DumperClass || "YAML::Perl::Dumper"';
 field dumper =>
     -class => '-init',
     -init => '$self->create("dumper")';
 
 field loader_class => -chain,
-    -class => '-init',
     -init => '$YAML::Perl::LoaderClass || $YAML::LoaderClass || "YAML::Perl::Loader"';
 field loader =>
     -class => '-init',
     -init => '$self->create("loader")';
 
 field resolver_class => -chain,
-    -class => '-init',
     -init => '$YAML::Perl::ResolverClass || $YAML::ResolverClass || "YAML::Perl::Resolver"';
 field resolver =>
     -class => '-init',
@@ -65,7 +62,7 @@ sub DumpFile {
         open $OUT, $mode, $filename
           or YAML::Perl::Base->die('YAML_DUMP_ERR_FILE_OUTPUT', $filename, $!);
     }  
-    local $/ = "\n"; # reset special to "sane"
+    local $/ = "\n"; # rset special to "sane"
     print $OUT Dump(@_);
 }
 

@@ -197,4 +197,5 @@ sub serialize_node {
         $self->resolver->ascend_resolver();
     }
 }
+
 1;
