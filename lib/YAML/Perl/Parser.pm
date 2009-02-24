@@ -289,21 +289,32 @@ sub process_directives {
             $self->yaml_version($token->value);
         }
         elsif ($token->name eq 'TAG') {
-            # XXX tags not done yet
+            my ($handle, $prefix) = @{$token->value};
+            if (defined $self->tag_handles->{$handle}) {
+                throw YAML::Perl::Error::Parser(
+                    undef,
+                    undef,
+                    "duplicate tag handle %r",
+                    $handle->encode('utf-8'),
+                    $token->start_mark,
+                );
+            }
+            $self->tag_handles->{$handle} = $prefix;
         }
     }
-    my $value;
+    my @value;
     if (keys(%{$self->tag_handles})) {
-        # XXX tags not done yet
-        #value = self.yaml_version, self.tag_handles.copy()
+        @value = ($self->yaml_version, {%{$self->tag_handles}});
     }
     else {
-        $value = $self->yaml_version;
+        @value = ($self->yaml_version, undef);
     }
-#     for key in self.DEFAULT_TAGS:
-#         if key not in self.tag_handles:
-#             self.tag_handles[key] = self.DEFAULT_TAGS[key]
-    return $value;
+    for my $key (keys %{$self->DEFAULT_TAGS}) {
+        if (not exists $self->tag_handles->{$key}) {
+            $self->tag_handles->{$key} = $self->DEFAULT_TAGS->{$key};
+        }
+    }
+    return @value;
 }
 
 sub parse_block_node {

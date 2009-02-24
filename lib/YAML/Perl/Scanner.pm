@@ -851,17 +851,48 @@ sub scan_yaml_directive_number {
 
 sub scan_tag_directive_value {
     my $self = shift;
-    die "scan_tag_directive_value";
+    my $start_mark = shift;
+    while ($self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    my $handle = $self->scan_tag_directive_handle($start_mark);
+    while ($self->reader->peek() eq ' ') {
+        $self->reader->forward();
+    }
+    my $prefix = $self->scan_tag_directive_prefix($start_mark);
+    return [$handle, $prefix];
 }
 
 sub scan_tag_directive_handle {
     my $self = shift;
-    die "scan_tag_directive_handle";
+    my $start_mark = shift;
+    my $value = $self->scan_tag_handle('directive', $start_mark);
+    my $ch = $self->reader->peek();
+    if ($ch ne ' ') {
+        throw YAML::Perl::Error::Scanner(
+            "while scanning a directive",
+            $start_mark,
+            "expected ' ', but found %r", $ch->encode('utf-8'),
+            $self->get_mark()
+        );
+    }
+    return $value;
 }
 
 sub scan_tag_directive_prefix {
     my $self = shift;
-    die "scan_tag_directive_prefix";
+    my $start_mark = shift;
+    my $value = $self->scan_tag_uri('directive', $start_mark);
+    my $ch = $self->reader->peek();
+    if ($ch !~ /^[\0\ \r\n\x85\x{2028}\x{2029}]$/) {
+        throw YAML::Perl::Error::Scanner(
+            "while scanning a directive",
+            $start_mark,
+            "expected ' ', but found %r", $ch->encode('utf-8'),
+            $self->get_mark()
+        );
+    }
+    return $value;
 }
 
 sub scan_directive_ignored_line {

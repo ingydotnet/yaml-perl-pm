@@ -250,3 +250,19 @@ foo:
 +++ dump
 ---
 - {}
+
+=== YAML Tags
++++ yaml
+%TAG !! tag:yaml.org,2002:
+---
+!!str 42: !!float 42
++++ events
+StreamStart
+DocumentStart
+MappingStart
+Scalar value 42
+Scalar value 42
+MappingEnd
+DocumentEnd
+StreamEnd
+
