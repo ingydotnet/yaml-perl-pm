@@ -1,4 +1,4 @@
-use Test::More tests => 3;
+use Test::More tests => 4;
 use YAML::Perl 'emit';
 use YAML::Perl::Events;
 
@@ -48,4 +48,18 @@ is $yaml3, <<'...', 'Default-Headered literal scalar';
 --- |
   foo
   bar
+...
+
+my $yaml4 = emit(
+    [
+        YAML::Perl::Event::StreamStart->new(),
+        YAML::Perl::Event::DocumentStart->new(),
+        YAML::Perl::Event::Scalar->new(value => "foo\nbar\n", style => '"'),
+        YAML::Perl::Event::DocumentEnd->new(),
+        YAML::Perl::Event::StreamEnd->new(),
+    ]
+);
+
+is $yaml4, <<'...', 'Double quoted scalar';
+--- "foo\nbar\n"
 ...

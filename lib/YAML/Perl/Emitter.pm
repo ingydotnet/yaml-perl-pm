@@ -63,7 +63,7 @@ field 'indention' => True;
 field 'canonical';
 field 'allow_unicode';
 field 'best_indent' => 2;
-field 'best_width' => 2;
+field 'best_width' => 80;
 field 'best_line_break' => "\n";
 field 'tag_prefixes';
 field 'prepared_anchor';
