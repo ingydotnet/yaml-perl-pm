@@ -8,13 +8,6 @@ filters { yaml => [qw'parse_yaml event_string join'] };
 
 run_is yaml => 'events';
 
-sub make_events {
-    map {
-       my ($event, @args) = split;
-       "YAML::Perl::Event::$event"->new(@args);
-   } @_;
-}
-
 sub event_string {
     map {
         my $event = ref($_);

@@ -19,13 +19,6 @@ run {
         'compose() produces a YAML node';
 };
 
-sub make_events {
-    map {
-       my ($event, @args) = split;
-       "YAML::Perl::Event::$event"->new(@args);
-   } @_;
-}
-
 sub event_string {
     map {
         my $string = ref($_);

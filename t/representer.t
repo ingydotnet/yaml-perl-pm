@@ -10,13 +10,6 @@ filters {
 
 run_is perl => 'dump';
 
-sub make_events {
-    map {
-       my ($event, @args) = split;
-       "YAML::Perl::Event::$event"->new(@args);
-   } @_;
-}
-
 sub represent {
     $_ = YAML::Perl::Representer->new()
         ->open()
