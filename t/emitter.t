@@ -13,11 +13,11 @@ run_is events => 'dump';
 
 sub make_events {
     map {
-       my ($event, %args) = split;
-       if (defined $args{value}) {
-           $args{value} =~ s/\\n/\n/g;
-       }
-       "YAML::Perl::Event::$event"->new(%args);
+        my ($event, %args) = split /\s+/, $_, 3;
+        if (defined $args{value}) {
+            $args{value} =~ s/\\n/\n/g;
+        }
+        "YAML::Perl::Event::$event"->new(%args);
    } @_;
 }
 

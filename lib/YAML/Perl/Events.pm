@@ -53,7 +53,7 @@ use YAML::Perl::Event -base;
 package YAML::Perl::Event::DocumentStart;
 use YAML::Perl::Event -base;
 
-field 'explicit';
+field 'explicit' => 1;  # Different default than PyYaml
 field 'version';
 field 'tags';
 

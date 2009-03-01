@@ -7,7 +7,7 @@ use YAML::Perl::Base -base;
 $YAML::Perl::VERSION = '0.01_03';
 
 @YAML::Perl::EXPORT = qw'Dump Load';
-@YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw';
+@YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw emit';
 
 field dumper_class => -chain,
     -class => '-init',
@@ -79,6 +79,20 @@ sub LoadFile {
           or YAML::Perl::Base->die('YAML_LOAD_ERR_FILE_INPUT', $filename, $!);
     }
     return Load(do { local $/; <$IN> });
+}
+
+# Ported EXPORT_OK top level functions from PyYaml
+
+sub emit {
+    my $events = shift;
+    require YAML::Perl::Emitter;
+    my $emitter = YAML::Perl::Emitter->new->open;
+    for my $event (@$events) {
+        $emitter->emit($event);
+    }
+    my $buffer = $emitter->writer->stream->buffer;
+    $emitter->close;
+    return $$buffer;
 }
 
 1;

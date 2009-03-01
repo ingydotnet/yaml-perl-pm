@@ -8,13 +8,6 @@ filters { yaml => [qw'compose serialize'] };
 
 run_is yaml => 'yaml2';
 
-sub make_events {
-    map {
-       my ($event, @args) = split;
-       "YAML::Perl::Event::$event"->new(@args);
-   } @_;
-}
-
 sub compose {
     YAML::Perl::Composer->new()
         ->open($_)

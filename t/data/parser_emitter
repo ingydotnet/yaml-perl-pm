@@ -266,3 +266,16 @@ MappingEnd
 DocumentEnd
 StreamEnd
 
+=== Literal Scalar
++++ events
+StreamStart
+DocumentStart
+Scalar value Four score and seven years ago\nour fathers brought forth\non this continent\n
+DocumentEnd
+StreamEnd
++++ dump
+--- |
+  Four score and seven years ago
+  our fathers brought forth
+  on this continent
+

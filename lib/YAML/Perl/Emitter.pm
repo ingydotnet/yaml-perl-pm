@@ -218,7 +218,6 @@ sub expect_document_start {
             not $self->event->tags and
             not $self->check_empty_document()
         );
-        $implicit = False; # XXX Different than PyYaml
         if (not $implicit) {
             $self->write_indent();
             $self->write_indicator('---', True);
@@ -667,6 +666,13 @@ sub choose_scalar_style {
     if ($self->event->style and $self->event->style eq '"' or $self->canonical) {
         return '"';
     }
+
+# BEGIN Perl YAML.pm heuristics
+    if ($self->event->value =~ /\n/ and length($self->event->value) >= 16) {
+        return '|';
+    }
+# END Perl YAML.pm heuristics
+
     if (not $self->event->style and $self->event->implicit->[0]) {
         if (not (
                 $self->simple_key_context and
@@ -1438,8 +1444,22 @@ sub write_double_quoted {
     $self->write_indicator('"', False);
 }
 
-sub determine_chomp {
-    die 'determine_chomp';
+sub determine_block_hints {
+    my $self = shift;
+    my $text = shift;
+    my $hints = '';
+    if ($text) {
+        if ($text =~ /^[ \n\x85\x{2028}\x{2029}]/) {
+            $hints .= $self->best_indent;
+        }
+        if ($text !~ /[\n\x85\x{2028}\x{2029}]\z/) {
+            $hints .= '-';
+        }
+        elsif (length($text) == 1 or $text =~ /[\n\x85\x{2028}\x{2029}].\z/s) {
+            $hints .= '+';
+        }
+    }
+    return $hints;
 }
 
 sub write_folded {
@@ -1447,7 +1467,52 @@ sub write_folded {
 }
 
 sub write_literal {
-    die 'write_literal';
+    my $self = shift;
+    my $text = shift;
+    my $chomp = $self->determine_block_hints($text);
+    $self->write_indicator('|' . $chomp, True);
+    $self->write_line_break();
+    my $breaks = True;
+    my ($start, $end) = (0, 0);
+    while ($end <= length($text)) {
+        my $ch = undef;
+        if ($end < length($text)) {
+            $ch = substr($text, $end, 1);
+        }
+        if ($breaks) {
+            if (not defined $ch or $ch !~ /^[\n\x85\x{2028}\x{2029}]$/) {
+                for my $br (split //, substr($text, $start, $end - $start)) {
+                    if ($br eq "\n") {
+                        $self->write_line_break();
+                    }
+                    else {
+                        $self->write_line_break($br);
+                    }
+                }
+                if (defined $ch) {
+                    $self->write_indent();
+                }
+                $start = $end;
+            }
+        }
+        else {
+            if (not defined $ch or $ch =~ /^[\n\x85\x{2028}\x{2029}]$/) {
+                my $data = substr($text, $start, $end - $start);
+                if ($self->encoding) {
+                    # $data = $data->encode($self->encoding);
+                }
+                $self->writer->write($data);
+                if (not defined $ch) {
+                    $self->write_line_break();
+                }
+                $start = $end;
+            }
+        }
+        if (defined $ch) {
+            $breaks = ($ch =~ /^[\n\x85\x{2028}\x{2029}]$/) ? True : False;
+        }
+        $end += 1;
+    }
 }
 
 sub write_plain {
