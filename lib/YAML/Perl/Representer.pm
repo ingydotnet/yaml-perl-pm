@@ -88,13 +88,20 @@ sub represent_data {
 #     #    self.represented_objects[alias_key] = node
 
     if (not ref($data) or overload::Method($data, '""')) {
-        $node = $self->represent_scalar(undef, $data);
+        return $self->represent_scalar(undef, $data);
     }
-    elsif (ref($data) eq 'ARRAY') {
-        $node = $self->represent_sequence(undef, $data);
+    my ($class, $type, $id) = node_info($data);
+    if ($type eq 'ARRAY') {
+        my $tag = $class
+        ? "!tag:yaml.org,2002:perl/array:$class"
+        : undef;
+        $node = $self->represent_sequence($tag, $data);
     }
-    elsif (ref($data) eq 'HASH') {
-        $node = $self->represent_mapping(undef, $data);
+    elsif ($type eq 'HASH') {
+        my $tag = $class
+        ? "tag:yaml.org,2002:perl/hash:$class"
+        : undef;
+        $node = $self->represent_mapping($tag, $data);
     }
     else {
         die "can't represent '$data' yet...";

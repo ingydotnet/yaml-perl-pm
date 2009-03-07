@@ -1,4 +1,5 @@
 ^MANIFEST\.SKIP$
+^.git/
 ^Makefile$
 ^pm_to_blib$
 ^blib
@@ -7,3 +8,6 @@
 ^init.py$
 ^Notes$
 ^ToDo$
+^BPW-Talk
+^Review
+^Hacks/

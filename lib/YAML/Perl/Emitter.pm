@@ -861,7 +861,7 @@ sub prepare_tag {
         }
     }
     if ($start < $end) {
-        push @$chunks, substr($suffix, $start, $start - $end);
+        push @$chunks, substr($suffix, $start, $end - $start);
     }
     my $suffix_text = join '', @$chunks;
     if ($handle) {

@@ -213,6 +213,45 @@ sub field {
     return $code if defined wantarray;
 }
 
+sub node_info {
+    my $stringify = $_[1] || 0;
+    my ($class, $type, $id) =
+        ref($_[0])
+        ? $stringify
+          ? _info("$_[0]")
+          : do {
+              require overload;
+              my @info = _info(overload::StrVal($_[0]));
+              if (ref($_[0]) eq 'Regexp') {
+                  @info[0, 1] = (undef, 'REGEXP');
+              }
+              @info;
+          }
+        : scalar_info($_[0]);
+    ($class, $type, $id) = scalar_info("$_[0]")
+        unless $id;
+    return wantarray ? ($class, $type, $id) : $id;
+}
+
+sub _info {
+    return (($_[0]) =~ qr{^(?:(.*)\=)?([^=]*)\(([^\(]*)\)$}o);
+};
+
+sub scalar_info {
+    my $id = 'undef';
+    my $type = '';
+    my $ext = '-S';
+    if (defined $_[0]) {
+        if (ref(\ $_[0]) eq 'GLOB') {
+            $type = 'GLOB';
+            $ext = '';
+        }
+        \$_[0] =~ /\((\w+)\)$/o or CORE::die();
+        $id = "$1$ext";
+    }
+    return ('', $type, $id);
+};
+
 sub _dump {
     no warnings 'once';
     require YAML::XS;
@@ -253,6 +292,7 @@ sub EXPORT_BASE {
         YAML::Perl::Base::assert
         YAML::Perl::Base::try
         YAML::Perl::Base::throw
+        YAML::Perl::Base::node_info
     );
 }
 

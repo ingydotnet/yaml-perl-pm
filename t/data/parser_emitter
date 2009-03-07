@@ -279,3 +279,10 @@ StreamEnd
   our fathers brought forth
   on this continent
 
+=== a blessed hash
++++ perl
+bless {}, 'Foo';
++++ dump
+--- !!perl/hash:Foo {}
++++ yaml
+--- !!perl/hash:Foo {}

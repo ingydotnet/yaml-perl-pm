@@ -1,4 +1,8 @@
-use t::TestYAMLPerl tests => 2;
+use t::TestYAMLPerl;
+
+skip_all_unless_require('YAML::XS');
+
+plan tests => 2;
 
 use YAML::Perl::Composer;
 use YAML::Perl::Events;
@@ -34,4 +38,8 @@ sub compose_yaml {
     my $c = YAML::Perl::Composer->new();
     $c->open($_);
     $c->compose();
+}
+
+sub yaml_load {
+    YAML::XS::Load(@_);
 }

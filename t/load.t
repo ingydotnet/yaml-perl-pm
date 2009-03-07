@@ -1,4 +1,6 @@
-use t::TestYAMLPerl; # tests => 4;
+use t::TestYAMLPerl;
+
+skip_all_unless_require('Test::Deep');
 
 use YAML::Perl;
 
@@ -8,7 +10,7 @@ filters {
     perl => 'eval',
 };
 
-run_is_deeply yaml => 'perl';
+run_is_deep yaml => 'perl';
 
 sub load_yaml {
     Load($_);
