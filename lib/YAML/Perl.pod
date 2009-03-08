@@ -6,19 +6,36 @@ YAML::Perl - Pure Perl YAML Implementation
 
 =head1 WARNING
 
-This is a very early release. Don't even bother to try this version.
+This is an early release of PyYaml ported to Perl. Don't even bother to
+try this version.
 
 Still here?
 
-If you just want to play around, the Dump/Load API is working, but
-throws errors often.
+This port is nearing completion. Most stuff works including:
+
+    * Loading and dumping of basic types
+    * Block and flow styles (JSON Loading)
+    * Blessed hashes arrays and scalars
+    * References
+    * Tags
+    * Detailed error messages
+    * Lot's of new stuff like parser/emitter streaming api
 
 You can play with it by using:
 
     ysh -MYAML::Perl
 
-Also the streaming API described below is working, but still chokes on
-the same things that the Dump/Load API does.
+=head1 TODO
+
+    * Review all code ported so far
+    * Port diff from old copy of pyyaml to current version
+    * Do all the utf8 related code porting that I've ignored
+    * Port the pyyaml test suite to Perl
+      * Get all tests to pass
+    * Support esoteric Perl types like regexps and globs
+    * Support the PyYAML tag resolution API
+    * Write full documentation for YAML::Perl
+    * Support YAML::Node from YAML::Perl
 
 =head1 SYNOPSIS
 
@@ -45,14 +62,13 @@ the same things that the Dump/Load API does.
     my $yaml2 = Dump $data;
     my $data2 = Load $yaml;
 
-    # New dump API:
+    # New, non-global dump API:
     my $yaml3 = YAML::Perl->new->dumper(%options)->dump($data);
 
     # New load API
     my $data3 = YAML::Perl->new->loader(%options)->open($yaml)->load();
 
     # New Streaming Parser/Emitter API
-    my @events;
     my $yaml4;
     my $parser = YAML::Perl->new->parser->open($yaml);
     my $emitter = YAML::Perl->new-emitter->open($yaml4);
