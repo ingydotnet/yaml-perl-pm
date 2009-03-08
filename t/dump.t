@@ -1,6 +1,7 @@
 use t::TestYAMLPerl; # tests => 4;
 
 use YAML::Perl;
+no_diff;
 
 spec_file('t/data/parser_emitter');
 filters {

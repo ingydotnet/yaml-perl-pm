@@ -343,7 +343,7 @@ sub expect_first_flow_sequence_item {
 
     if ($self->event->isa('YAML::Perl::Event::SequenceEnd')) {
         $self->indent(pop @{$self->indents});
-        $self->flow_level -= 1;
+        $self->flow_level($self->flow_level - 1);
         $self->write_indicator(']', False);
         $self->state(pop @{$self->states});
     }
@@ -532,7 +532,7 @@ sub check_empty_sequence {
     return (
         $self->event->isa('YAML::Perl::Event::SequenceStart') and
         @{$self->events} and
-        $self->events->[0]->isa('YAML::Perl::Event::MappingEnd')
+        $self->events->[0]->isa('YAML::Perl::Event::SequenceEnd')
     );
 }
 

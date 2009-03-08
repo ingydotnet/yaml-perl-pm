@@ -93,7 +93,7 @@ sub represent_data {
     my ($class, $type, $id) = node_info($data);
     if ($type eq 'ARRAY') {
         my $tag = $class
-        ? "!tag:yaml.org,2002:perl/array:$class"
+        ? "tag:yaml.org,2002:perl/array:$class"
         : undef;
         $node = $self->represent_sequence($tag, $data);
     }
@@ -102,6 +102,12 @@ sub represent_data {
         ? "tag:yaml.org,2002:perl/hash:$class"
         : undef;
         $node = $self->represent_mapping($tag, $data);
+    }
+    elsif ($type eq 'SCALAR') {
+        my $tag = $class
+        ? "tag:yaml.org,2002:perl/scalar:$class"
+        : undef;
+        $node = $self->represent_scalar($tag, $data);
     }
     else {
         die "can't represent '$data' yet...";
@@ -114,6 +120,10 @@ sub represent_scalar {
     my $tag = shift;
     my $value = shift;
     my $style = @_ ? shift : undef;
+    if ($tag) {
+        #tag:yaml.org,2002:perl/hash:Baz
+        $value = $$value;
+    }
     if (not defined $style) {
         $style = $self->default_style;
     }

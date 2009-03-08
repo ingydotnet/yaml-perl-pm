@@ -279,10 +279,22 @@ StreamEnd
   our fathers brought forth
   on this continent
 
-=== a blessed hash
+=== A blessed hash, array and scalar
++++ ONLYX
 +++ perl
-bless {}, 'Foo';
+[
+    bless({}, 'Foo'),
+    bless([], 'Bar'),
+    bless((\ do { my $x = "silly string"}), 'Baz'),
+]
 +++ dump
---- !!perl/hash:Foo {}
+---
+- !!perl/hash:Foo {}
+- !!perl/array:Bar []
+- !!perl/scalar:Baz 'silly string'
 +++ yaml
---- !!perl/hash:Foo {}
+---
+- !!perl/hash:Foo {}
+- !!perl/array:Bar []
+- !!perl/scalar:Baz silly string
+
