@@ -92,8 +92,8 @@ sub construct_object {
         $old_deep = $self->deep_construct();
         $self->deep_construct(True);
     }
-    if ($self->constructed_objects->{node}) {
-        return $self->constructed_objects->{node};
+    if ($self->constructed_objects->{$node}) {
+        return $self->constructed_objects->{$node};
     }
     if ($self->recursive_objects->{$node}) {
         throw YAML::Perl::Error::Constructor(

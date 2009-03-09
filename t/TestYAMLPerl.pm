@@ -2,6 +2,7 @@ package t::TestYAMLPerl;
 use Test::Base -Base;
 
 delimiters('===', '+++');
+no_diff;
 
 package t::TestYAMLPerl::Filter;
 use Test::Base::Filter -base;

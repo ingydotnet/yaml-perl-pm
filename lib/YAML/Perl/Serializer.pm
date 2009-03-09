@@ -18,7 +18,7 @@ field 'emitter', -init => '$self->create("emitter")';
 field 'resolver_class', 'YAML::Perl::Resolver';
 field 'resolver', -init => '$self->create("resolver")';
 
-use constant ANCHOR_TEMPLATE => 'id%03d';
+use constant ANCHOR_TEMPLATE => '%d';
 
 field 'use_encoding';
 field 'use_explicit_start' => 1;
