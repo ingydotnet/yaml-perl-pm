@@ -298,3 +298,9 @@ StreamEnd
 - !!perl/array:Bar []
 - !!perl/scalar:Baz silly string
 
+=== Mapping in a flow sequence
++++ yaml
+--- [ foo: bar, baz: 42]
++++ perl
+[ {foo => 'bar'}, {baz => 42} ]
+

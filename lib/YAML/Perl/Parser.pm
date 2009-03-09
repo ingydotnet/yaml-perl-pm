@@ -692,17 +692,52 @@ sub parse_flow_sequence_entry {
 
 sub parse_flow_sequence_entry_mapping_key {
     my $self = shift;
-    die "parse_flow_sequence_entry_mapping_key";
+    my $token = $self->scanner->get_token();
+    if (not $self->scanner->check_token(
+        'YAML::Perl::Token::Value',
+        'YAML::Perl::Token::FlowEntry',
+        'YAML::Perl::Token::FlowSequenceEnd',
+    )) {
+        push @{$self->states}, 'parse_flow_sequence_entry_mapping_value';
+        return $self->parse_flow_node();
+    }
+    else {
+        $self->state('parse_flow_sequence_entry_mapping_value');
+        return $self->process_empty_scalar($token->end_mark);
+    }
 }
 
 sub parse_flow_sequence_entry_mapping_value {
     my $self = shift;
-    die "parse_flow_sequence_entry_mapping_value";
+    if ($self->scanner->check_token('YAML::Perl::Token::Value')) {
+        my $token = $self->scanner->get_token();
+        if (not $self->scanner->check_token(
+            'YAML::Perl::Token::FlowEntry',
+            'YAML::Perl::Token::FlowSequenceEnd'
+        )) {
+            push @{$self->states}, 'parse_flow_sequence_entry_mapping_end';
+            return $self->parse_flow_node();
+        }
+        else {
+            $self->state('parse_flow_sequence_entry_mapping_end');
+            return $self->process_empty_scalar($token->end_mark);
+        }
+    }
+    else {
+        $self->state('parse_flow_sequence_entry_mapping_end');
+        my $token = $self->scanner->peek_token();
+        return $self->process_empty_scalar($token->start_mark);
+    }
 }
 
 sub parse_flow_sequence_entry_mapping_end {
     my $self = shift;
-    die "parse_flow_sequence_entry_mapping_end";
+    $self->state('parse_flow_sequence_entry');
+    my $token = $self->scanner->peek_token();
+    return YAML::Perl::Event::MappingEnd->new(
+        start_mark => $token->start_mark,
+        end_mark => $token->start_mark,
+    );
 }
 
 sub parse_flow_mapping_first_key {
