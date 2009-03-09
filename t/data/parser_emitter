@@ -32,10 +32,10 @@ DocumentEnd
 StreamEnd
 +++ dump_dumper
 ---
-11: &1
+11: &001
   53: 64
   75: 99
-42: *1
+42: *001
 +++ nodes
 xxx
 +++ dump

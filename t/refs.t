@@ -13,10 +13,10 @@ my $yaml = Dump($data);
 
 is $yaml, <<'...', 'Refs get Dumped';
 ---
-- &1
+- &001
   - 1
   - 2
-- *1
+- *001
 ...
 
 my $data2 = Load($yaml);
