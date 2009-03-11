@@ -4,6 +4,15 @@ use Test::Base -Base;
 delimiters('===', '+++');
 no_diff;
 
+our @EXPORT = (qw(read_file));
+
+sub read_file() {
+    my $filename = shift;
+    open my $fh, $filename or die $!;
+    local $/;
+    return <$fh>;
+}
+
 package t::TestYAMLPerl::Filter;
 use Test::Base::Filter -base;
 

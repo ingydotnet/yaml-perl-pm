@@ -63,6 +63,7 @@ sub open {
     my $self = shift;
     $self->SUPER::open(@_);
     $self->fetch_stream_start();
+    return $self;
 }
 
 field tokens_taken => 0;
@@ -954,7 +955,7 @@ sub scan_tag {
     my ($suffix, $handle);
     if ($ch eq '<') {
         my $handle = undef;
-        $self->forward(2);
+        $self->reader->forward(2);
         $suffix = $self->scan_tag_uri('tag', $start_mark);
         if ($self->reader->peek() ne '>') {
             throw YAML::Perl::Error::Scanner(
@@ -965,7 +966,7 @@ sub scan_tag {
                 $self->reader->get_mark(),
             );
         }
-        $self->forward();
+        $self->reader->forward();
     }
     elsif ($ch =~ /^[\0 \t\r\n\x85\x{2028}\x{2029}]$/) {
         $handle = undef;
@@ -1475,10 +1476,11 @@ sub scan_plain {
             $ch = $self->reader->peek($length);
 
             if (
-                ($ch =~ /^[\0\ \t\r\n]$/) or
+                ($ch =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/) or
                 (
                     not $self->flow_level and $ch eq ':' and
-                    $self->reader->peek($length + 1) =~ /^[\0\ \t\r\n]$/
+                    $self->reader->peek($length + 1) =~
+                        /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
                 ) or
                 ($self->flow_level and $ch =~ /^[\,\:\?\[\]\{\}]$/)
             ) {
@@ -1488,7 +1490,8 @@ sub scan_plain {
         }
         if ($self->flow_level and
             $ch eq ':' and
-            $self->reader->peek($length + 1) !~ /^[\0\ \t\r\n\,\[\]\{\}]$/
+            $self->reader->peek($length + 1) !~
+                /^[\0\ \t\r\n\x85\x{2028}\x{2029}\,\[\]\{\}]$/
         ) {
             $self->reader->forward($length);
             throw YAML::Perl::Error::Scanner(
@@ -1521,10 +1524,6 @@ sub scan_plain {
     );
 }
 
-#   ... ch in u'\r\n\x85\u2028\u2029':
-# XXX needs unicode linefeeds 
-my $linefeed = qr/^[\r\n\x85]$/;
-
 sub scan_plain_spaces {
     my $self = shift;
     my $indent = shift;
@@ -1538,17 +1537,17 @@ sub scan_plain_spaces {
     my $whitespaces = $self->reader->prefix($length);
     $self->reader->forward($length);
     my $ch = $self->reader->peek();
-    if ($ch =~ $linefeed) {
+    if ($ch =~ /^[\r\n\x85\x{2028}\x{2029}]$/) {
         my $line_break = $self->scan_line_break();
         $self->allow_simple_key(True);
         my $prefix = $self->reader->prefix(3);
         if (($prefix eq '---' or $prefix eq '...') and
-            $self->reader->peek(3) =~ $linefeed
+            $self->reader->peek(3) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
         ) {
             return;
         }
         my $breaks = [];
-        while ($self->reader->peek() =~ $linefeed) {
+        while ($self->reader->peek() =~ /^[\ \r\n\x85\x{2028}\x{2029}]$/) {
             if ($self->reader->peek() eq ' ') {
                 $self->reader->forward();
             }
@@ -1556,7 +1555,7 @@ sub scan_plain_spaces {
                 push @$breaks, $self->scan_line_break();
                 my $prefix = $self->reader->prefix(3);
                 if (($prefix eq '---' or $prefix eq '...') and
-                    $self->reader->peek(3) =~ $linefeed
+                    $self->reader->peek(3) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
                 ) {
                     return;
                 }

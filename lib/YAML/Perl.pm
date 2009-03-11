@@ -4,7 +4,7 @@ use strict;
 use warnings; # XXX requires 5.6+
 use YAML::Perl::Base -base;
 
-$YAML::Perl::VERSION = '0.02';
+$YAML::Perl::VERSION = '0.03';
 
 @YAML::Perl::EXPORT = qw'Dump Load';
 @YAML::Perl::EXPORT_OK = qw'DumpFile LoadFile freeze thaw emit';

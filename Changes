@@ -1,4 +1,11 @@
 ---
+version: 0.03
+date:    
+changes:
+- Ported pyyaml scanner token tests.
+- Fixed a couple scanner bugs.
+- Make Scanner::open return $self.
+---
 version: 0.02
 date:    Sun Mar  8 17:21:05 PDT 2009
 changes:
