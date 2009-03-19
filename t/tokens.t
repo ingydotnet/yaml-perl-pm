@@ -1,6 +1,6 @@
 use t::TestYAMLPerl tests => 28;
 
-use YAML::Perl::scanner;
+use YAML::Perl::Scanner;
 
 my $symbol = {
     "YAML::Perl::Token::Directive" => '%',

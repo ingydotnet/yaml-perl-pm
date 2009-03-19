@@ -18,7 +18,19 @@ field resolver_exact_paths => [];
 field resolver_prefix_paths => [];
 
 sub add_implicit_resolver {
-    die "add_implicit_resolver";
+    my $class = shift;
+    my $tag = shift;
+    my $regexp = shift;
+    my $first = shift;
+    if (not $class->can('yaml_implicit_resolvers')) {
+        # cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
+    }
+    if (not defined $first) {
+        $first = [undef];
+    }
+    for my $ch (@$first) {
+        # cls.yaml_implicit_resolvers.setdefault(ch, []).append((tag, regexp))
+    }
 }
 
 sub add_path_resolver {

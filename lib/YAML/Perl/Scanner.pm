@@ -544,19 +544,19 @@ sub fetch_value {
         # Block context needs additional checks.
         # (Do we really need them? They will be catched by the parser
         # anyway.)
-        if (not $self->flow_level) {
-
-            # We are allowed to start a complex value if and only if
-            # we can start a simple key.
-            if (not $self->allow_simple_key) {
-                throw YAML::Perl::Error::Scanner(
-                    undef,
-                    undef,
-                    "mapping values are not allowed here",
-                    $self->reader->get_mark(),
-                );
-            }
-        }
+#         if (not $self->flow_level) {
+# 
+#             # We are allowed to start a complex value if and only if
+#             # we can start a simple key.
+#             if (not $self->allow_simple_key) {
+#                 throw YAML::Perl::Error::Scanner(
+#                     undef,
+#                     undef,
+#                     "mapping values are not allowed here",
+#                     $self->reader->get_mark(),
+#                 );
+#             }
+#         }
 
         # If this value starts a new block mapping, we need to add
         # BLOCK-MAPPING-START.  It will be detected as an error later by
@@ -565,7 +565,7 @@ sub fetch_value {
             if ($self->add_indent($self->reader->column)) {
                 my $mark = $self->reader->get_mark();
                 push @{$self->tokens}, 
-                    YAML::Perl::Token::BlockMappingStart(
+                    YAML::Perl::Token::BlockMappingStart->new(
                         start_mark => $mark,
                         end_mark => $mark,
                     );
@@ -736,7 +736,7 @@ sub check_plain {
 
 sub scan_to_next_token {
     my $self = shift;
-    if ($self->reader->index == 0 and $self->reader->peek() eq "\uFEFF") {
+    if ($self->reader->index == 0 and $self->reader->peek() eq "\x{FEFF}") {
         $self->reader->forward();
     }
     my $found = False;

@@ -276,6 +276,7 @@ sub assert {
 
 sub throw {
     require Carp;
+    Carp::cluck(">@_<") if grep not(defined($_)), @_;;
     my $error = (join " ", map {my $val = "$_"; $val =~ s/\s*\z//; $val} @_) . "\n";
     Carp::croak($error);
     Carp::confess($error);
