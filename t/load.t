@@ -13,5 +13,7 @@ filters {
 run_is_deep yaml => 'perl';
 
 sub load_yaml {
-    Load($_);
+    my $rc = Load($_);
+    undef($_);
+    return $rc;
 }

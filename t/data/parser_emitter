@@ -280,7 +280,6 @@ StreamEnd
   on this continent
 
 === A blessed hash, array and scalar
-+++ ONLYX
 +++ perl
 [
     bless({}, 'Foo'),
@@ -303,4 +302,12 @@ StreamEnd
 --- [ foo: bar, baz: 42]
 +++ perl
 [ {foo => 'bar'}, {baz => 42} ]
+
+=== Undef
++++ perl
+undef
++++ dump
+--- ~
++++ yaml
+--- ~
 

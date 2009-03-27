@@ -1402,7 +1402,7 @@ sub scan_flow_scalar_spaces {
             "while scanning a quoted scalar",
             $start_mark,
             "found unexpected end of stream",
-            $self->get_mark(),
+            $self->reader->get_mark(),
         );
     }
     elsif ($ch =~ /^[\r\n\x85\x{2028}\x{2029}]$/) {

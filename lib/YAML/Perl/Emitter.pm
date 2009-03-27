@@ -668,7 +668,11 @@ sub choose_scalar_style {
     }
 
 # BEGIN Perl YAML.pm heuristics
-    if ($self->event->value =~ /\n/ and length($self->event->value) >= 16) {
+    if (
+        defined($self->event->value) and
+        $self->event->value =~ /\n/ and
+        length($self->event->value) >= 16
+    ) {
         return '|';
     }
 # END Perl YAML.pm heuristics
@@ -889,6 +893,19 @@ sub prepare_anchor {
 sub analyze_scalar {
     my $self = shift;
     my $scalar = shift;
+
+    if (not defined $scalar) {
+        return YAML::Perl::ScalarAnalysis->new(
+            scalar => '~',
+            empty => True,
+            multiline => False,
+            allow_flow_plain => True,
+            allow_block_plain => True,
+            allow_single_quoted => False,
+            allow_double_quoted => False,
+            allow_block => True,
+        );
+    }
 
     # Empty scalar is a special case.
     if (not length $scalar) {

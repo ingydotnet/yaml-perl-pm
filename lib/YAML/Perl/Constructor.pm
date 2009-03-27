@@ -172,6 +172,11 @@ sub construct_scalar {
         );
     }
     my $scalar = $node->value;
+    if (not defined $node->style) {
+        if ($scalar eq '~') {
+            return undef;
+        }
+    }
     if (my $tag = $node->tag) {
         if ($tag =~ s/^tag:yaml.org,2002:perl\/scalar://) {
             return bless \ $scalar, $tag;

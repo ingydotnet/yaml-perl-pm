@@ -16,7 +16,8 @@ field 'style';
 sub stringify {
     my $self = shift;
     my $class = ref($self) || $self;
-    my $value = $self->value . "";
+    my $value = $self->value;
+    $value = defined($value) ? "$value" : "null";
     my $tag = ($self->tag || '') . "";
     return "$class(tag=$tag, value=$value)";
 }

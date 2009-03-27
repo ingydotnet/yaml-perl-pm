@@ -53,7 +53,9 @@ sub represent_data {
         $self->alias_key(undef);
     }
     else {
-        $self->alias_key("$data"); # id(data)
+        if (defined($data)) {
+            $self->alias_key("$data"); # id(data)
+        }
     }
 
     my $node;
