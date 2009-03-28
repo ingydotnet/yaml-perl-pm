@@ -1,4 +1,4 @@
-use Test::More tests => 4;
+use Test::More tests => 6;
 use YAML::Perl 'emit';
 use YAML::Perl::Events;
 
@@ -63,3 +63,43 @@ my $yaml4 = emit(
 is $yaml4, <<'...', 'Double quoted scalar';
 --- "foo\nbar\n"
 ...
+
+my $yaml5 = emit(
+    [
+        YAML::Perl::Event::StreamStart->new(),
+        YAML::Perl::Event::DocumentStart->new(),
+        YAML::Perl::Event::MappingStart->new(),
+        YAML::Perl::Event::SequenceStart->new(),
+        YAML::Perl::Event::Scalar->new(value => '1'),
+        YAML::Perl::Event::Scalar->new(value => '2'),
+        YAML::Perl::Event::SequenceEnd->new(),
+        YAML::Perl::Event::Scalar->new(value => '3'),
+        YAML::Perl::Event::MappingEnd->new(),
+        YAML::Perl::Event::DocumentEnd->new(),
+        YAML::Perl::Event::StreamEnd->new(),
+    ]
+);
+
+is $yaml5, <<'...', 'Mapping with collection key';
+---
+? - 1
+  - 2
+: 3
+...
+
+my $yaml6 = emit(
+    [
+        YAML::Perl::Event::StreamStart->new(),
+        YAML::Perl::Event::DocumentStart->new(),
+        YAML::Perl::Event::Scalar->new(value => "The fat lazy dog lay under the awesome fox that kept jumping over his dumb lazy ass all day.", style => '>'),
+        YAML::Perl::Event::DocumentEnd->new(),
+        YAML::Perl::Event::StreamEnd->new(),
+    ]
+);
+
+is $yaml6, <<'...', 'Folded scalar';
+--- >-
+  The fat lazy dog lay under the awesome fox that kept jumping over his dumb lazy
+  ass all day.
+...
+

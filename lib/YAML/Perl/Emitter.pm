@@ -524,7 +524,11 @@ sub expect_block_mapping_simple_value {
 }
 
 sub expect_block_mapping_value {
-    die 'expect_block_mapping_value';
+    my $self = shift;
+    $self->write_indent();
+    $self->write_indicator(':', True, indention => True);
+    push @{$self->states}, 'expect_block_mapping_key';
+    $self->expect_node(mapping => True);
 }
 
 sub check_empty_sequence {
@@ -1480,7 +1484,79 @@ sub determine_block_hints {
 }
 
 sub write_folded {
-    die 'write_folded';
+    my $self = shift;
+    my $text = shift;
+
+    my $hints = $self->determine_block_hints($text);
+    $self->write_indicator('>' . $hints, True);
+    $self->write_line_break();
+    my $leading_space = True;
+    my $spaces = False;
+    my $breaks = True;
+    my $start = 0;
+    my $end = 0;
+    while ($end <= length($text)) {
+        my $ch = undef;
+        if ($end < length($text)) {
+            $ch = substr($text, $end, 1);
+        }
+        if ($breaks) {
+            if (not defined($ch) or $ch !~ /^[\n\x85\x{2028}\x{2029}]$/) {
+                if (not $leading_space and defined($ch) and $ch ne ' '
+                        and substr($text, $start, 1) eq "\n") {
+                    $self->write_line_break();
+                }
+                $leading_space = ($ch eq ' ') ? True : False;
+                for my $br (split '', substr($text, $start, $end - $start)) {
+                    if ($br eq "\n") {
+                        $self->write_line_break();
+                    }
+                    else {
+                        $self->write_line_break($br);
+                    }
+                }
+                if (defined $ch) {
+                    $self->write_indent();
+                }
+                $start = $end;
+            }
+        }
+        elsif ($spaces) {
+            if ($ch ne ' ') {
+                if (($start + 1) == $end and $self->column > $self->best_width) {
+                    $self->write_indent();
+                }
+                else {
+                    my $data = substr($text, $start, $end - $start);
+                    $self->column($self->column + length($data));
+                    if ($self->encoding) {
+                        # data = data.encode(self.encoding)
+                    }
+                    $self->writer->write($data);
+                }
+                $start = $end;
+            }
+        }
+        else {
+            if (not defined($ch) or $ch =~ /^[\ \n\x85\x{2028}\x{2029}]$/) {
+                my $data = substr($text, $start, $end - $start);
+                $self->column($self->column + length($data));
+                if ($self->encoding) {
+                    # data = data.encode(self.encoding)
+                }
+                $self->writer->write($data);
+                if (not defined $ch) {
+                    $self->write_line_break();
+                }
+                $start = $end;
+            }
+        }
+        if (defined $ch) {
+            $breaks = ($ch =~ /^[\n\x85\x{2028}\x{2029}]$/) ? True : False;
+            $spaces = ($ch eq ' ') ? True : False;
+        }
+        $end += 1;
+    }
 }
 
 sub write_literal {
