@@ -1582,12 +1582,11 @@ sub scan_tag_handle {
     my $ch = $self->reader->peek();
     if ($ch ne '!') {
         throw YAML::Perl::Error::Scanner(
-            "while scanning a %s",
-            $name,
+            "while scanning a $name",
             $start_mark,
-            "expected '!', but found %r",
-            $ch->encode('utf-8'),
-            $self->get_mark(),
+            "expected '!', but found '$ch'",
+            # $ch->encode('utf-8'),
+            $self->reader->get_mark(),
         );
     }
     my $length = 1;
@@ -1600,12 +1599,11 @@ sub scan_tag_handle {
         if ($ch ne '!') {
             $self->reader->forward($length);
             throw YAML::Perl::Error::Scanner(
-                "while scanning a %s",
-                $name,
+                "while scanning a $name",
                 $start_mark,
-                "expected '!', but found %r",
-                $ch->encode('utf-8'),
-                self->reader->get_mark(),
+                "expected '!', but found '$ch'",
+#                 $ch->encode('utf-8'),
+                $self->reader->get_mark(),
             );
         }
         $length += 1;
@@ -1653,7 +1651,33 @@ sub scan_tag_uri {
 
 sub scan_uri_escapes {
     my $self = shift;
-    die "scan_uri_escapes";
+    my $name = shift;
+    my $start_mark = shift;
+    # See the specification for details.
+    my $bytes = [];
+    my $mark = $self->reader->get_mark();
+    while ($self->reader->peek() eq '%') {
+        $self->reader->forward();
+        for my $k (0..1) {
+            if ($self->reader->peek($k) !~ /^[0-9A-Fa-f]$/) {
+                throw YAML::Perl::Error::Scanner(
+                    "while scanning a $name",
+                    $start_mark,
+                    "expected URI escape sequence of 2 hexdecimal numbers, but found ",
+                    ($self->reader->peek($k)), #.encode('utf-8')),
+                    $self->reader->get_mark(),
+                )
+            }
+        }
+        push @$bytes, pack("H*", $self->reader->prefix(2));
+        $self->reader->forward(2);
+    }
+#     try:
+#         value = unicode(''.join(bytes), 'utf-8')
+#     except UnicodeDecodeError, exc:
+#         raise ScannerError("while scanning a %s" % name, start_mark, str(exc), mark)
+    my $value = join '', @$bytes;
+    return $value;
 }
 
 sub scan_line_break {
