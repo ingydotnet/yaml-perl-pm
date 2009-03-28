@@ -314,13 +314,16 @@ undef
 === Scan TAG Directive
 +++ yaml
 %TAG ! tag:clarkevans.com,2002:%30
+---
 x: y
 
 +++ tokens
 StreamStart
 Directive value TAG
-Scalar value x
+DocumentStart
 BlockMappingStart
+Key
+Scalar value x
 Value
 Scalar value y
 BlockEnd

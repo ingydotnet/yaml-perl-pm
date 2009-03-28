@@ -1,6 +1,8 @@
-use Test::More tests => 6;
+use Test::More tests => 7;
 use YAML::Perl 'emit';
 use YAML::Perl::Events;
+
+# goto TEST7;
 
 my $yaml1 = emit(
     [
@@ -101,5 +103,27 @@ is $yaml6, <<'...', 'Folded scalar';
 --- >-
   The fat lazy dog lay under the awesome fox that kept jumping over his dumb lazy
   ass all day.
+...
+
+TEST7:
+my $yaml7 = emit(
+    [
+        YAML::Perl::Event::StreamStart->new(),
+        YAML::Perl::Event::DocumentStart->new(
+            tags => {
+                '!foo!' => 'tag:clarkevans.com,2002:',
+            },
+        ),
+        YAML::Perl::Event::Scalar->new(
+            value => 123,
+        ),
+        YAML::Perl::Event::DocumentEnd->new(),
+        YAML::Perl::Event::StreamEnd->new(),
+    ]
+);
+
+is $yaml7, <<'...', 'Emit TAG directive';
+%TAG !foo! tag:clarkevans.com,2002:
+--- 123
 ...
 

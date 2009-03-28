@@ -717,10 +717,10 @@ sub choose_scalar_style {
 
 sub process_scalar {
     my $self = shift;
-    if (not $self->analysis) {
+    if (not defined $self->analysis) {
         $self->analysis($self->analyze_scalar($self->event->value));
     }
-    if (not $self->style) {
+    if (not defined $self->style) {
         $self->style($self->choose_scalar_style());
     }
     my $split = (not $self->simple_key_context);
@@ -942,7 +942,7 @@ sub analyze_scalar {
     my $mixed_breaks_spaces = False;    # anything else
 
     # Check document indicators.
-    if ($scalar =~ /^---/ or $scalar =~ /^.../) {
+    if ($scalar =~ /^---/ or $scalar =~ /^\.\.\./) {
         $block_indicators = True;
         $flow_indicators = True;
     }
@@ -1271,7 +1271,14 @@ sub write_version_directive {
 }
 
 sub write_tag_directive {
-    die 'write_tag_directive';
+    my $self = shift;
+    my $handle_text = shift;
+    my $prefix_text = shift;
+    my $data = "%TAG $handle_text $prefix_text";
+#     if self.encoding:
+#         data = data.encode(self.encoding)
+    $self->writer->write($data);
+    $self->write_line_break();
 }
 
 sub write_single_quoted {
