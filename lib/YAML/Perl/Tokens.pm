@@ -18,8 +18,11 @@ sub stringify {
     my $class = ref($self) || $self;
 
     my @attributes = grep not(/_mark$/), keys %$self;
-    my $arguments = join ', ', map
-        sprintf("%s=%s", $_, $self->{$_}), @attributes;
+    my $arguments =
+        join ', ',
+        map sprintf("%s=%s", $_, $self->{$_}),
+        grep defined($self->{$_}),
+        @attributes;
     return "$class ($arguments)";
 }
 
