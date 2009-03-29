@@ -62,7 +62,7 @@ sub DumpFile {
             ($mode, $filename) = ($1, $2);
         }
         open $OUT, $mode, $filename
-          or YAML::Perl::Base->die('YAML_DUMP_ERR_FILE_OUTPUT', $filename, $!);
+          or die("Error opening '$filename' for YAML::DumpFile:\n$!");
     }  
     local $/ = "\n"; # rset special to "sane"
     print $OUT Dump(@_);
@@ -76,7 +76,7 @@ sub LoadFile {
     }
     else {
         open $IN, $filename
-          or YAML::Perl::Base->die('YAML_LOAD_ERR_FILE_INPUT', $filename, $!);
+          or die("Error opening '$filename' for YAML::LoadFile:\n$!");
     }
     return Load(do { local $/; <$IN> });
 }

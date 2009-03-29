@@ -95,14 +95,9 @@ sub create {
     my $object_class = (shift) . '_class';
     my $module_name = $self->$object_class;
     eval "require $module_name";
-    $self->die("Error in require $module_name - $@")
+    throw Error("Error in require $module_name - $@")
         if $@ and "$@" !~ /Can't locate/;
     return $module_name->new;
-}
-
-sub die {
-    my $self = shift;
-    Carp::confess(@_);
 }
 
 my %code = (
@@ -207,7 +202,7 @@ sub field {
     }
 
     my $sub = eval $code;
-    CORE::die $@ if $@;
+    throw $@ if $@;
     no strict 'refs';
     *{"${package}::$field"} = $sub;
     return $code if defined wantarray;
@@ -246,7 +241,7 @@ sub scalar_info {
             $type = 'GLOB';
             $ext = '';
         }
-        \$_[0] =~ /\((\w+)\)$/o or CORE::die();
+        \$_[0] =~ /\((\w+)\)$/o or throw();
         $id = "$1$ext";
     }
     return ('', $type, $id);
@@ -259,7 +254,6 @@ sub _dump {
 }
 
 sub XXX {
-#     CORE::die _dump(@_);
     require Carp;
     Carp::confess(_dump(@_));
 }
