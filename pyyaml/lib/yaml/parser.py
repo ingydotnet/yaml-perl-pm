@@ -87,12 +87,10 @@ class Parser(object):
         self.state = self.parse_stream_start
 
     def check_event(self, *choices):
-        # print "+check_event"
         # Check the type of the next event.
         if self.current_event is None:
             if self.state:
                 self.current_event = self.state()
-                # print self.current_event
         if self.current_event is not None:
             if not choices:
                 return True
@@ -102,7 +100,6 @@ class Parser(object):
         return False
 
     def peek_event(self):
-        # print "+peek_event"
         # Get the next event.
         if self.current_event is None:
             if self.state:
@@ -110,17 +107,12 @@ class Parser(object):
         return self.current_event
 
     def get_event(self):
-        # print "+get_event"
-        # print "%s" % self.state
-        # print "  %s" % self.peek_token()
-        # print "  %s" % self.tokens
         # Get the next event and proceed further.
         if self.current_event is None:
             if self.state:
                 self.current_event = self.state()
         value = self.current_event
         self.current_event = None
-        # print "    %s" % value
         return value
 
     # stream    ::= STREAM-START implicit_document? explicit_document* STREAM-END
@@ -413,7 +405,7 @@ class Parser(object):
                 self.state = self.parse_indentless_sequence_entry
                 return self.process_empty_scalar(token.end_mark)
         token = self.peek_token()
-        event = SequenceEndEvent(token.start_mark, token.start_mark) # XXX!
+        event = SequenceEndEvent(token.start_mark, token.start_mark)
         self.state = self.states.pop()
         return event
 

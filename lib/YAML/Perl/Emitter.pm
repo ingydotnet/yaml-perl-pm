@@ -60,6 +60,7 @@ field 'line' => 0;
 field 'column' => 0;
 field 'whitespace' => True;
 field 'indention' => True;
+field 'open_ended' => False;
 field 'canonical';
 field 'allow_unicode';
 field 'best_indent' => 2;
@@ -196,6 +197,10 @@ sub expect_document_start {
     my $self = shift;
     my $first = @_ ? shift : False;
     if ($self->event->isa('YAML::Perl::Event::DocumentStart')) {
+        if (($self->event->version or $self->event->tags) and $self->open_ended) {
+            $self->write_indicator('...', True);
+            $self->write_indent();
+        }
         if ($self->event->version) {
             my $version_text = $self->prepare_version($self->event->version);
             $self->write_version_directive($version_text);
@@ -228,6 +233,10 @@ sub expect_document_start {
         $self->state('expect_document_root');
     }
     elsif ($self->event->isa('YAML::Perl::Event::StreamEnd')) {
+#         if ($self->open_ended) {
+#             $self->write_indicator('...', True);
+#             $self->write_indent();
+#         }
         $self->write_stream_end();
         $self->state('expect_nothing');
     }
@@ -834,7 +843,7 @@ sub prepare_tag {
     }
     my $handle = undef;
     my $suffix = $tag;
-    for my $prefix (keys %{$self->tag_prefixes}) {
+    for my $prefix (sort keys %{$self->tag_prefixes}) {
         if (
             $tag =~ /^\Q$prefix\E/ and
             ($prefix eq '!' or length($prefix) < length($tag))
@@ -932,14 +941,12 @@ sub analyze_scalar {
     my $special_characters = False;
 
     # Whitespaces.
-    my $inline_spaces = False;          # non-space space+ non-space
-    my $inline_breaks = False;          # non-space break+ non-space
-    my $leading_spaces = False;         # ^ space+ (non-space | $)
-    my $leading_breaks = False;         # ^ break+ (non-space | $)
-    my $trailing_spaces = False;        # (^ | non-space) space+ $
-    my $trailing_breaks = False;        # (^ | non-space) break+ $
-    my $inline_breaks_spaces = False;   # non-space break+ space+ non-space
-    my $mixed_breaks_spaces = False;    # anything else
+    my $leading_space = False;
+    my $leading_break = False;
+    my $trailing_space = False;
+    my $trailing_break = False;
+    my $break_space = False;
+    my $space_break = False;
 
     # Check document indicators.
     if ($scalar =~ /^---/ or $scalar =~ /^\.\.\./) {
@@ -948,25 +955,17 @@ sub analyze_scalar {
     }
 
     # First character or preceded by a whitespace.
-    my $preceeded_by_space = True;
+    my $preceeded_by_whitespace = True;
 
     # Last character or followed by a whitespace.
-    my $followed_by_space =
+    my $followed_by_whitespace =
         (length($scalar) == 1 or $scalar =~ /^.[\0 \t\r\n\x85\x{2028}\x{2029}]/s);
 
-    # The current series of whitespaces contain plain spaces.
-    my $spaces = False;
+    # The previous character is a space.
+    my $previous_space = False;
 
-    # The current series of whitespaces contain line breaks.
-    my $breaks = False;
-
-    # The current series of whitespaces contain a space followed by a
-    # break.
-    my $mixed = False;
-
-    # The current series of whitespaces start at the beginning of the
-    # scalar.
-    my $leading = False;
+    # The previous character is a break.
+    my $previous_break = False;
 
     my $index = 0;
     while ($index < length($scalar)) {
@@ -982,11 +981,11 @@ sub analyze_scalar {
             }
             if ($ch =~ /^[\?\:]$/) {
                 $flow_indicators = True;
-                if ($followed_by_space) {
+                if ($followed_by_whitespace) {
                     $block_indicators = True;
                 }
             }
-            if ($ch eq '-' and $followed_by_space) {
+            if ($ch eq '-' and $followed_by_whitespace) {
                 $flow_indicators = True;
                 $block_indicators = True;
             }
@@ -998,11 +997,11 @@ sub analyze_scalar {
             }
             if ($ch eq ':') {
                 $flow_indicators = True;
-                if ($followed_by_space) {
+                if ($followed_by_whitespace) {
                     $block_indicators = True;
                 }
             }
-            if ($ch eq '#' and $preceeded_by_space) {
+            if ($ch eq '#' and $preceeded_by_whitespace) {
                 $flow_indicators = True;
                 $block_indicators = True;
             }
@@ -1031,91 +1030,42 @@ sub analyze_scalar {
             }
         }
 
-        # Spaces, line breaks, and how they are mixed. State machine.
-
-        # Start or continue series of whitespaces.
-        if ($ch =~ /^[\ \n\x85\x{2028}\x{2029}]$/) {
-            if ($spaces and $breaks) {
-                if ($ch ne ' ') {      # break+ (space+ break+)    => mixed
-                    $mixed = True;
-                }
+        # Detect important whitespace combinations.
+        if ($ch eq ' ') {
+            if ($index == 0) {
+                $leading_space = True;
             }
-            elsif ($spaces) {
-                if ($ch ne ' ') {      # (space+ break+)   => mixed
-                    $breaks = True;
-                    $mixed = True;
-                }
+            if ($index == length($scalar) - 1) {
+                $trailing_space = True;
             }
-            elsif ($breaks) {
-                if ($ch eq ' ') {      # break+ space+
-                    $spaces = True;
-                }
+            if ($previous_break) {
+                $break_space = True;
             }
-            else {
-                $leading = ($index == 0);
-                if ($ch eq ' ') {      # space+
-                    $spaces = True;
-                }
-                else {                 # break+
-                    $breaks = True;
-                }
-            }
+            $previous_space = True;
+            $previous_break = False;
         }
-
-        # Series of whitespaces ended with a non-space.
-        elsif ($spaces or $breaks) {
-            if ($leading) {
-                if ($spaces and $breaks) {
-                    $mixed_breaks_spaces = True;
-                }
-                elsif ($spaces) {
-                    $leading_spaces = True;
-                }
-                elsif ($breaks) {
-                    $leading_breaks = True;
-                }
+        elsif ($ch =~ /^[\n\x85\x{2028}\x{2029}]$/) {
+            if ($index == 0) {
+                $leading_break = True;
             }
-            else {
-                if ($mixed) {
-                    $mixed_breaks_spaces = True;
-                }
-                elsif ($spaces and $breaks) {
-                    $inline_breaks_spaces = True;
-                }
-                elsif ($spaces) {
-                    $inline_spaces = True;
-                }
-                elsif ($breaks) {
-                    $inline_breaks = True;
-                }
+            if ($index == length($scalar) - 1) {
+                $trailing_break = True;
             }
-            $spaces = $breaks = $mixed = $leading = False;
+            if ($previous_space) {
+                $space_break = True;
+            }
+            $previous_space = False;
+            $previous_break = True;
         }
-
-        # Series of whitespaces reach the end.
-        if (($spaces or $breaks) and ($index == (length($scalar) - 1))) {
-            if ($spaces and $breaks) {
-                $mixed_breaks_spaces = True;
-            }
-            elsif ($spaces) {
-                $trailing_spaces = True;
-                if ($leading) {
-                    $leading_spaces = True;
-                }
-            }
-            elsif ($breaks) {
-                $trailing_breaks = True;
-                if ($leading) {
-                    $leading_breaks = True;
-                }
-            }
-            $spaces = $breaks = $mixed = $leading = False;
+        else {
+            $previous_space = False;
+            $previous_break = False;
         }
 
         # Prepare for the next character.
         $index += 1;
-        $preceeded_by_space = ($ch =~ /^[\0 \t\r\n\x85\x{2028}\x{2029}]$/);
-        $followed_by_space = (
+        $preceeded_by_whitespace = ($ch =~ /^[\0 \t\r\n\x85\x{2028}\x{2029}]$/);
+        $followed_by_whitespace = (
             $index + 1 >= length($scalar) or
             substr($scalar, index + 1, 1) =~ /^[\0\ \t\r\n\x85\x{2028}\x{2029}]$/
         );
@@ -1128,32 +1078,33 @@ sub analyze_scalar {
     my $allow_double_quoted = True;
     my $allow_block = True;
 
-    # Leading and trailing whitespace are bad for plain scalars. We also
-    # do not want to mess with leading whitespaces for block scalars.
-    if ($leading_spaces or $leading_breaks or $trailing_spaces) {
-        $allow_flow_plain = $allow_block_plain = $allow_block = False;
+    # Leading and trailing whitespaces are bad for plain scalars.
+    if ($leading_space or $leading_break or
+        $trailing_space or $trailing_break
+    ) {
+         $allow_flow_plain = $allow_block_plain = False;
     }
 
-    # Trailing breaks are fine for block scalars, but unacceptable for
-    # plain scalars.
-    if ($trailing_breaks) {
-        $allow_flow_plain = $allow_block_plain = False;
+    # We do not permit trailing spaces for block scalars.
+    if ($trailing_space) {
+        my $allow_block = False;
     }
 
-    # The combination of (space+ break+) is only acceptable for block
+    # Spaces at the beginning of a new line are only acceptable for block
     # scalars.
-    if ($inline_breaks_spaces) {
+    if ($break_space) {
         $allow_flow_plain = $allow_block_plain = $allow_single_quoted = False;
     }
 
-    # Mixed spaces and breaks, as well as special character are only
+    # Spaces followed by breaks, as well as special character are only
     # allowed for double quoted scalars.
-    if ($mixed_breaks_spaces or $special_characters) {
+    if ($space_break or $special_characters) {
         $allow_flow_plain = $allow_block_plain =
         $allow_single_quoted = $allow_block = False;
     }
 
-    # We don't emit multiline plain scalars.
+    # Although the plain scalar writer supports breaks, we never emit
+    # multiline plain scalars.
     if ($line_breaks) {
         $allow_flow_plain = $allow_block_plain = False;
     }
@@ -1217,6 +1168,7 @@ sub write_indicator {
     $self->whitespace($whitespace);
     $self->indention($self->indention and $indention);
     $self->column($self->column + length($data));
+    $self->open_ended(False);
     if ($self->encoding) {
 #         my $data = $data->encode($self->encoding);
     }
@@ -1495,6 +1447,9 @@ sub write_folded {
     my $text = shift;
 
     my $hints = $self->determine_block_hints($text);
+    if ($hints =~ /\+$/) {
+        $self->open_ended(True);
+    }
     $self->write_indicator('>' . $hints, True);
     $self->write_line_break();
     my $leading_space = True;
@@ -1569,8 +1524,11 @@ sub write_folded {
 sub write_literal {
     my $self = shift;
     my $text = shift;
-    my $chomp = $self->determine_block_hints($text);
-    $self->write_indicator('|' . $chomp, True);
+    my $hints = $self->determine_block_hints($text);
+    $self->write_indicator('|' . $hints, True);
+    if ($hints =~ /\+$/) {
+        $self->open_ended(True);
+    }
     $self->write_line_break();
     my $breaks = True;
     my ($start, $end) = (0, 0);
@@ -1619,6 +1577,9 @@ sub write_plain {
     my $self = shift;
     my $text = shift;
     my $split = shift || True;
+    if ($self->root_context) {
+        $self->open_ended(True);
+    }
     if (not length $text) {
         return;
     }

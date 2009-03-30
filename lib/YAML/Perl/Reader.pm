@@ -129,7 +129,7 @@ sub check_printable {
         my $position = 666; #XXX
         # $self->index + (length($self->buffer) - $self->pointer) + $match->start();
         throw YAML::Perl::Error::Reader(
-            $self->name, $position, $character,
+            $self->name, $position, ord($character),
             'unicode', "special characters are not allowed"
         );
     }
