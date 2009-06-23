@@ -1,17 +1,8 @@
-use t::TestYAMLPerl; # tests => 4;
+use TestML -run, -bridge => 't::Bridge';
+__END__
+%TestML: 1.0
+%PointMarker: +++
+%Data: data/parser_emitter
 
-use YAML::Perl;
-no_diff;
-
-spec_file('t/data/parser_emitter');
-filters {
-    perl => ['eval', 'dump_yaml'],
-    dump => 'assert_dump_for_dumper',
-};
-
-run_is perl => 'dump';
-
-sub dump_yaml {
-    Dump(@_);
-}
+$perl.eval().dump_yaml() == $dump;
 

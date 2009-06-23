@@ -38,7 +38,6 @@ StreamEnd
 42: *001
 +++ nodes
 xxx
-+++ dump
 
 === Block Sequence
 +++ events
@@ -65,7 +64,6 @@ StreamEnd
 xxx
 +++ perl
 [ 1, 2, 3]
-+++ dump
 
 === Flow Mapping
 +++ yaml
