@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package YAML::Perl::Loader;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use constant DEBUG => ($ENV{YAML_PP_LOAD_DEBUG} or $ENV{YAML_PP_LOAD_TRACE}) ? 1 : 0;
 use constant TRACE => $ENV{YAML_PP_LOAD_TRACE} ? 1 : 0;
