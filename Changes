@@ -1,6 +1,14 @@
-0.100 tba
+0.10 Sun 14 May 14:34:31 CEST 2017
 
- - ...
+ - Initial release of complete rewrite.
+ - Has a front end module, a Loader and a Reader.
+
+
+
+#------------------------------------------------------------------------------
+# Below are old CPAN releases from the first attempt at this module.
+# Above are releases for the entirely new code base for this module.
+#------------------------------------------------------------------------------
 
 0.02 Sun Mar  8 17:21:05 PDT 2009
 

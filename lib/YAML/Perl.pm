@@ -13,7 +13,7 @@ our $VERSION = '0.10';
 
 =head1 NAME
 
-YAML::Perl - YAML Frontend for various backends
+YAML::Perl - YAML infrastructure for Perl 5
 
 =head1 DESCRIPTION
 
@@ -31,7 +31,7 @@ Documentation follows...
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2017. Ingy döt Net.
+Copyright 2017. Ingy döt Net, Tina Müller.
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
