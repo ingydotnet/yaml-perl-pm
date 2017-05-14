@@ -5,9 +5,9 @@ use 5.010;
 use Test::More;
 use FindBin '$Bin';
 use Data::Dumper;
-use YAML::PP::Loader;
+use YAML::Perl::Loader;
 
-my $yppl = YAML::PP::Loader->new;
+my $yppl = YAML::Perl::Loader->new;
 my $yaml = <<'EOM';
 complexmap:
     x: y
