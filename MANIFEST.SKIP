@@ -1,0 +1,21 @@
+# Git.
+^\.git/
+^\.travis\.yml$
+# Makemaker generated files and dirs.
+^GNUmakefile$
+^MANIFEST\.
+^Makefile$
+^blib/
+^pm_to_blib
+^YAML-
+# Temp, old and emacs backup files.
+~$
+\.old$
+^#.*#$
+^\.#
+
+# from cpants.cpanauthors.org:
+# Update MANIFEST.SKIP to exclude MYMETA files. If you are lazy, add
+# "#!install_default" in your MANIFEST.SKIP and update your ExtUtils::Manifest
+# if necessary, then some of the most common files will be excluded.
+#!install_default
