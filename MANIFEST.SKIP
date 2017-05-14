@@ -1,3 +1,4 @@
+t/yaml-test-suite-data
 # Git.
 ^\.git/
 ^\.travis\.yml$

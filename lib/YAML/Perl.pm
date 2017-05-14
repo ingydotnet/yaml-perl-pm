@@ -2,7 +2,7 @@ package YAML::Perl;
 use strict;
 use warnings;
 
-our $VERSION = '0.100';
+our $VERSION = '0.10';
 
 
 1;
@@ -14,6 +14,10 @@ our $VERSION = '0.100';
 =head1 NAME
 
 YAML::Perl - YAML Frontend for various backends
+
+=head1 DESCRIPTION
+
+Documentation follows...
 
 =head1 AUTHORS
 
@@ -27,7 +31,7 @@ YAML::Perl - YAML Frontend for various backends
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright ?-2017. Ingy döt Net.
+Copyright 2017. Ingy döt Net.
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
