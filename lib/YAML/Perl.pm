@@ -2,7 +2,7 @@ package YAML::Perl;
 use strict;
 use warnings;
 
-our $VERSION = '0.11';
+our $VERSION = '0.11_001';
 
 
 1;
