@@ -23,7 +23,7 @@ my %WriteMakefileArgs = (
   "MIN_PERL_VERSION" => "5.008001",
   "NAME" => "YAML::Perl",
   "PREREQ_PM" => {
-    "YAML::PP::Parser" => '0.002_001',
+    "YAML::PP::Parser" => '0.002_002',
   },
   "TEST_REQUIRES" => {
     %FallbackPrereqs,
