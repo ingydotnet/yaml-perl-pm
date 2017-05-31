@@ -2,7 +2,7 @@ package YAML::Perl::Reader;
 use strict;
 use warnings;
 
-our $VERSION = '0.11_001';
+our $VERSION = '0.12';
 
 sub new {
     my ($class, %args) = @_;
