@@ -20,3 +20,5 @@ t/yaml-test-suite-data
 # "#!install_default" in your MANIFEST.SKIP and update your ExtUtils::Manifest
 # if necessary, then some of the most common files will be excluded.
 #!install_default
+# seems it doesn't work, though, so:
+^MYMETA*
