@@ -16,7 +16,7 @@ my %WriteMakefileArgs = (
     "Tina Müller <tinita\@cpan.org>",
   ],
   "CONFIGURE_REQUIRES" => {
-    "ExtUtils::MakeMaker" => 0,
+    "ExtUtils::MakeMaker" => '6.46',
   },
   "DISTNAME" => "YAML-Perl",
   "LICENSE" => "perl",
@@ -32,6 +32,17 @@ my %WriteMakefileArgs = (
 
   "test" => {
     "RECURSIVE_TEST_FILES" => 1,
+  },
+  META_MERGE => {
+    "meta-spec" => { version => 2 },
+    resources => {
+    repository => {
+        type => 'git',
+        url => 'https://github.com/ingydotnet/yaml-perl-pm',
+        web => 'https://github.com/ingydotnet/yaml-perl-pm',
+        bugtracker => 'https://github.com/ingydotnet/yaml-perl-pm/issues',
+    },
+    },
   },
 );
 
