@@ -6,6 +6,7 @@ use Test::More;
 use FindBin '$Bin';
 use Data::Dumper;
 use YAML::Perl::Loader;
+use YAML::PP::Constructor;
 
 my $yppl = YAML::Perl::Loader->new;
 my $yaml = <<'EOM';
@@ -31,10 +32,10 @@ complex:
         : innervalue
     : outervalue
 EOM
-my $exp_complexmap = $yppl->stringify_complex({ a => 'b' });
-my $exp_complexseq = $yppl->stringify_complex([qw/ A B /]);
-my $inner = $yppl->stringify_complex({ a => 'b', c => 'd' });
-my $nested = $yppl->stringify_complex({ $inner => "innervalue" });
+my $exp_complexmap = YAML::PP::Constructor->stringify_complex({ a => 'b' });
+my $exp_complexseq = YAML::PP::Constructor->stringify_complex([qw/ A B /]);
+my $inner = YAML::PP::Constructor->stringify_complex({ a => 'b', c => 'd' });
+my $nested = YAML::PP::Constructor->stringify_complex({ $inner => "innervalue" });
 
 {
     my $data = $yppl->load($yaml);
